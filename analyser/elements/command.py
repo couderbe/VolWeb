@@ -21,6 +21,5 @@ class Command(Node):
 
     def toDict(self) -> dict:
         data = super().toDict()
-        #data.update({"type": self.__class__.__name__,"args":self.args})
-        data.update({"type": self.__class__.__name__,"args":''.join(ch for ch in self.args if ch.isalnum())})
+        data.update({"type": self.__class__.__name__,"args":self.args})
         return data
