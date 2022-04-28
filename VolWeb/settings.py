@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'dashboard.apps.DashboardConfig',
     'investigations.apps.InvestigationsConfig',
     'iocs.apps.IocsConfig',
+    'analyser.apps.AnalyserConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

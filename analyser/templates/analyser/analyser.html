@@ -1,0 +1,125 @@
+<!-- {% extends "dashboard/base.html" %}
+{% load static %}
+{% block content%} -->
+<script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/hierarchy.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/themes/Responsive.js"></script>
+<link rel="stylesheet" href="{% static '/css/analyser.css' %}">
+
+<!-- <div class="sidebar" id="sidebar">
+    <a href="#">About</a>
+    <a href="#">Services</a>
+    <a href="#">Clients</a>
+    <a href="#">Contact</a>
+
+</div> -->
+
+
+<div id="chartdiv"></div>
+
+<script>
+    var data1 = [{
+        name: "Root",
+        children: [{
+            name: "A0",
+            children: [{
+                name: "A00",
+                value: 88
+            }, {
+                name: "A01",
+                value: 23
+            }, {
+                name: "A02",
+                value: 25
+            }]
+        }, {
+            name: "B0",
+            children: [{
+                name: "B10",
+                value: 62
+            }, {
+                name: "B11",
+                value: 4
+            }]
+        }, {
+            name: "C0",
+            children: [{
+                name: "C20",
+                value: 11
+            }, {
+                name: "C21",
+                value: 92
+            }, {
+                name: "C22",
+                value: 17
+            }]
+        }, {
+            name: "D0",
+            children: [{
+                name: "D30",
+                value: 95
+            }, {
+                name: "D31",
+                value: 84,
+            }, {
+                name: "D32",
+                value: 75
+            }]
+        }]
+    }];
+
+    var data = JSON.parse("{{data|escapejs}}");
+    console.log(data)
+    const root = am5.Root.new("chartdiv");
+    root.setThemes([
+        am5themes_Animated.new(root),
+        am5themes_Responsive.new(root)
+    ]);
+    let container = root.container.children.push(
+        am5.Container.new(root, {
+            width: am5.percent(100),
+            height: am5.percent(100),
+            layout: root.verticalLayout,
+        })
+    );
+    let series = container.children.push(
+        am5hierarchy.Tree.new(root,
+            {
+                idField: "uid",
+                categoryField: "name",
+                childDataField: "children",
+                orientation: "vertical"
+            }
+        )
+    );
+
+    series.nodes.template.setAll({ templateField: "template" });
+    series.setAll({ wheelable: true })
+    series.nodes.template.events.on("click", function (ev) {
+        console.log("Clicked on a node", ev.target);
+        console.log(ev.target.dataItem.dataContext);
+        console.log(ev.target.dataItem.dataContext['userData']);
+        // p = ev.target.dataItem.dataContext['userData'];
+        // $("sidebar").html('<ul id="test"></ul>');
+        // for (var key in p) {
+        //     if (p.hasOwnProperty(key)) {
+        //         console.log(key + " -> " + p[key]);
+        //         $("test").append("<li>" + key + " -> " + p[key] + "</li>");
+        //     }
+        // }
+    });
+
+    series.data.setAll(data);
+
+    // $(document).ready(function () {
+    //     $('.container').show();
+    //     $('chartdiv').show();
+    //     $('.container-fluid').show();
+    //     $('.spinner-main').hide();
+    // });
+
+    
+
+</script>
+<!-- {% endblock content %} -->
