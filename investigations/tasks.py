@@ -9,6 +9,7 @@ import hashlib
 import subprocess, time, json, re, os
 from .vol_windows import *
 from .vol_linux import *
+from .bulk import *
 
 WINDOWS_MODULES_TO_RUN = 18
 LINUX_MODULES_TO_RUN = 0
@@ -144,6 +145,13 @@ def windows_memory_analysis(dump_path,case):
     with open(ioc_result_name, 'w') as fout:
         fout.write('')
         fout.close()
+
+    try:
+        output_path = bulk_extractor_analysis(dump_path,case)
+        bulk_url_graph = {'bulk_url_graph':bulk_url_graph(output_path)}
+    except BulkError:
+        bulk_url_graph = {'bulk_url_graph':[['Corrupted Dump']]}
+        PARTIAL_RESULTS = True
 
     for ioc in iocs:
         if (str(case.id) == str(ioc.linkedInvestigation)):
@@ -300,7 +308,7 @@ def windows_memory_analysis(dump_path,case):
               **graph, **cmdline, **privileges,
               **env, **timeline, **timeline_chart,
               **filescan, **hashdump, **iocmatch, **skeleton,
-              **lsadump, **cachedump, **hivelist }
+              **lsadump, **cachedump, **hivelist, **bulk_url_graph }
     with open('Cases/Results/'+str(case.id)+'.json', 'w') as json_file:
         json.dump(results, json_file)
     if PARTIAL_RESULTS:

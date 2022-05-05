@@ -93,6 +93,11 @@
           <h5 class="h5 text-dark">Reporting (Beta)</h5>
           <button onclick="GenerateReport('{{case.title}}','{{case.os_version}}','{{case.description}}','{{case.name}}');" class="btn btn-warning" type="button">Generate Report <span class='text-muted'>(PDF)</span></button>
         </li>
+
+        <li class="list-group-item card-font bg-light">
+          <h5 class="h5 text-dark">Bulk Analysis</h5>
+          {% include "investigations/bulk_artifacts/bulk_url.html" %}
+        </li>
       </ul>
 
         </div>

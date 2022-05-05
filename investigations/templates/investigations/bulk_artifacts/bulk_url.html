@@ -1,0 +1,55 @@
+<button class="btn btn-dark border border-dark" type="button" data-bs-toggle="collapse"
+    data-bs-target="#collapseProcessGraph" aria-expanded="false" aria-controls="collapseProcessGraph">
+    Bulk Url Chart
+</button>
+<div class="collapse mt-5 text-white card-font" id="collapseBulkUrlChart">
+    <div style="height:80rem;" class="text-white" id="container">
+        <script>
+            
+            var data = [
+                ['Eyebrow pencil', 5221],
+                ['Nail polish', 9256],
+                ['Lipstick', 3308],
+                ['Lip gloss', 5432],
+                ['Mascara', 13701],
+                ['Foundation', 4008],
+                ['Eyeshadows', 4229],
+                ['Rouge', 18712],
+                ['Powder', 10419],
+                ['Eyeliner', 3932]
+            ];
+
+            var chart = anychart.bar();
+            chart
+                .animation(true)
+                .padding([10, 40, 5, 20])
+
+            var series = chart.bar(data);
+
+            series
+                .tooltip()
+                .position('right')
+                .anchor('left-center')
+                .offsetX(5)
+                .offsetY(0)
+                .format('${%Value}{groupsSeparator: }');
+
+            chart.xAxis().title('Number of occurences');
+            chart.yAxis().title('Urls');
+            chart.interactivity().hoverMode('by-x');
+            chart.tooltip().positionMode('point');
+            // set scale minimum
+            chart.yScale().minimum(0);
+
+            // set container id for the chart
+            chart.container('container');
+
+            $(document).ready(function () {
+                chart.draw();
+                var data2 = JSON.parse("{{bulk_url_graph|escapejs}}");
+                console.log(data2);
+            });
+
+        </script>
+    </div>
+</div>
