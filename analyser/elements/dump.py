@@ -54,5 +54,5 @@ class Dump(Node):
 
     def toDict(self) -> dict:
         data = super().toDict()
-        data.update({"type": self.__class__.__name__})
+        data.update({"group": self.__class__.__name__})
         return data

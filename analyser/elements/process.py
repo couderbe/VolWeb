@@ -103,8 +103,8 @@ class Process(Node):
 
     def toDict(self) -> dict:
         data = super().toDict()
-        data.update({"type": self.__class__.__name__, "pid": self.pid, "ppid": self.ppid, "sessionId": self.sessionId,
-                     "wow64": self.wow64, "exitTime": str(self.exitTime), "createTime": str(self.createTime), "template": {"tooltipText": 'PID: {pid}'}})
+        data.update({"group": self.__class__.__name__, "pid": self.pid, "ppid": self.ppid, "sessionId": self.sessionId,
+                     "wow64": self.wow64, "exitTime": str(self.exitTime), "createTime": str(self.createTime)})
         return data
 
     def __str__(self) -> str:

@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from analyser.elements.command import Command
 from analyser.elements.dump import Dump
+from analyser.elements.node import Node
 from analyser.elements.process import Process
 from analyser.elements.analysis import Analysis
 
@@ -28,7 +29,9 @@ def analyser(request):
          {"tooltipText": "PID: {pid}"}}]}, ]}]
     analysis = Analysis("Analyse")
     analysis.loadDump(investData)
-    print([analysis.toDict()])
-    dataJSON = dumps([analysis.toDict()])
+    print(analysis.toChart())
+    dataJSON = dumps(analysis.toChart())
     #dataJSON = dumps(context)
-    return render(request, 'analyser/analyser.html', {'data': dataJSON})
+    groups = dumps([sub.__name__ for sub in Node.__subclasses__()])
+    print(groups)
+    return render(request, 'analyser/analyser.html', {'data': dataJSON,'groups':groups})

@@ -21,5 +21,5 @@ class Command(Node):
 
     def toDict(self) -> dict:
         data = super().toDict()
-        data.update({"type": self.__class__.__name__,"args":self.args})
+        data.update({"group": self.__class__.__name__,"args":self.args})
         return data

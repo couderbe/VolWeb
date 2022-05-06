@@ -1,125 +1,91 @@
-<!-- {% extends "dashboard/base.html" %}
+{% extends "dashboard/base.html" %}
 {% load static %}
-{% block content%} -->
-<script src="https://cdn.amcharts.com/lib/5/index.js"></script>
-<script src="https://cdn.amcharts.com/lib/5/hierarchy.js"></script>
-<script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
-<script src="https://cdn.amcharts.com/lib/5/themes/Responsive.js"></script>
+{% block content%}
+
+<script src="https://cdn.anychart.com/releases/v8/js/anychart-base.min.js"></script>
+<script src="https://cdn.anychart.com/releases/v8/js/anychart-graph.min.js"></script>
+<script src="https://cdn.anychart.com/releases/v8/js/anychart-data-adapter.min.js"></script>
+<script src="https://cdn.anychart.com/releases/v8/js/anychart-ui.min.js"></script>
+<script src="https://cdn.anychart.com/releases/v8/js/anychart-exports.min.js"></script>
+<link href="https://cdn.anychart.com/releases/v8/css/anychart-ui.min.css" type="text/css" rel="stylesheet">
+<link href="https://cdn.anychart.com/releases/v8/fonts/css/anychart-font.min.css" type="text/css" rel="stylesheet">
+<style type="text/css">
+    html,
+    body,
+    #chartdiv {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+</style>
 <link rel="stylesheet" href="{% static '/css/analyser.css' %}">
-
-<!-- <div class="sidebar" id="sidebar">
-    <a href="#">About</a>
-    <a href="#">Services</a>
-    <a href="#">Clients</a>
-    <a href="#">Contact</a>
-
-</div> -->
-
 
 <div id="chartdiv"></div>
 
+
 <script>
-    var data1 = [{
-        name: "Root",
-        children: [{
-            name: "A0",
-            children: [{
-                name: "A00",
-                value: 88
-            }, {
-                name: "A01",
-                value: 23
-            }, {
-                name: "A02",
-                value: 25
-            }]
-        }, {
-            name: "B0",
-            children: [{
-                name: "B10",
-                value: 62
-            }, {
-                name: "B11",
-                value: 4
-            }]
-        }, {
-            name: "C0",
-            children: [{
-                name: "C20",
-                value: 11
-            }, {
-                name: "C21",
-                value: 92
-            }, {
-                name: "C22",
-                value: 17
-            }]
-        }, {
-            name: "D0",
-            children: [{
-                name: "D30",
-                value: 95
-            }, {
-                name: "D31",
-                value: 84,
-            }, {
-                name: "D32",
-                value: 75
-            }]
-        }]
-    }];
-
     var data = JSON.parse("{{data|escapejs}}");
-    console.log(data)
-    const root = am5.Root.new("chartdiv");
-    root.setThemes([
-        am5themes_Animated.new(root),
-        am5themes_Responsive.new(root)
-    ]);
-    let container = root.container.children.push(
-        am5.Container.new(root, {
-            width: am5.percent(100),
-            height: am5.percent(100),
-            layout: root.verticalLayout,
-        })
-    );
-    let series = container.children.push(
-        am5hierarchy.Tree.new(root,
-            {
-                idField: "uid",
-                categoryField: "name",
-                childDataField: "children",
-                orientation: "vertical"
-            }
-        )
-    );
+    var chart = anychart.graph(data);
+    var groups = JSON.parse("{{groups|escapejs}}");
 
-    series.nodes.template.setAll({ templateField: "template" });
-    series.setAll({ wheelable: true })
-    series.nodes.template.events.on("click", function (ev) {
-        console.log("Clicked on a node", ev.target);
-        console.log(ev.target.dataItem.dataContext);
-        console.log(ev.target.dataItem.dataContext['userData']);
-        // p = ev.target.dataItem.dataContext['userData'];
-        // $("sidebar").html('<ul id="test"></ul>');
-        // for (var key in p) {
-        //     if (p.hasOwnProperty(key)) {
-        //         console.log(key + " -> " + p[key]);
-        //         $("test").append("<li>" + key + " -> " + p[key] + "</li>");
-        //     }
-        // }
+    anychart.onDocumentReady(function () {
+
+
+        chart.nodes().labels({ format: "{%name}" })
+
+        chart.listen("click", function (e) {
+            var tag = e.domTarget.tag;
+            if (tag) {
+                console.log(tag);
+                if (tag.type === 'node') {
+                    for (var i = 0; i < data.nodes.length; i++) {
+                        if (data.nodes[i].id === tag.id) {
+                            // var newMapping = mapping.filter("id", function (value) {
+                            //     return value !== tag.id;
+                            // });
+                            // chart.data(newMapping);
+                            // break;
+                        }
+                    }
+                }
+            }
+        });
+
+        // set settings for each group
+        for (var i = 0; i < groups.length; i++) {
+            // get group
+            var group = chart.group(groups[i]);
+
+            if (typeof group !== 'undefined') {
+                // set group labels settings
+                group
+                    .labels()
+                    .enabled(true)
+                    .anchor('left-center')
+                    .position('right-center')
+                    .padding(0, -5)
+                    .fontColor(anychart.palettes.defaultPalette[i]);
+                // {enable:true,anchor:'left-center',position:'right-center',fontColor:anychart.palettes.defaultPalette[i]}
+
+                // set group nodes stroke and fill
+                group.stroke(anychart.palettes.defaultPalette[i]);
+                group.fill(anychart.palettes.defaultPalette[i]);
+            }
+        }
+
+        // set container id for the chart
+        chart.container('chartdiv');
+        // initiate chart drawing
+        chart.draw();
     });
 
-    series.data.setAll(data);
+    $(document).ready(function () {
+        $('.container').show();
+        $('.container-fluid').show();
+        $('.spinner-main').hide();
 
-    // $(document).ready(function () {
-    //     $('.container').show();
-    //     $('chartdiv').show();
-    //     $('.container-fluid').show();
-    //     $('.spinner-main').hide();
-    // });
-
-    
+    });
 
 </script>
-<!-- {% endblock content %} -->
+{% endblock content %}

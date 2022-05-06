@@ -25,12 +25,12 @@ class Analysis(Node):
         for elt in dumpData['cmdline']:
             for proc in procs:
                 if proc.pid == int(elt['PID']) and proc.name == str(elt['Process']):
-                    proc.children.append(Command(args=elt['Args']))
+                    proc.children.append(Command(name=elt['Args'].split()[0],args=elt['Args']))
                     break
 
     def toDict(self) -> dict:
         data = super().toDict()
-        data.update({"type": self.__class__.__name__})
+        data.update({"group": self.__class__.__name__})
         return data
 
 if __name__ == "__main__":
@@ -38,4 +38,4 @@ if __name__ == "__main__":
         investData = json.load(f)
     a = Analysis("Analyse")
     a.loadDump(investData)
-    print(a.toDict())
+    print(a.toChart())
