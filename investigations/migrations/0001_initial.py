@@ -33,6 +33,7 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=255)),
                 ('eof', models.BooleanField()),
                 ('uid', models.CharField(max_length=255)),
+                ('process_antivirus', models.BooleanField()),
             ],
         ),
         migrations.CreateModel(

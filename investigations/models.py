@@ -20,6 +20,7 @@ class UploadInvestigation(models.Model):
     name = models.CharField(max_length=255)
     eof = models.BooleanField()
     uid = models.CharField(max_length=255)
+    process_antivirus = models.BooleanField()
     def __str__(self):
         return str(self.title)
 

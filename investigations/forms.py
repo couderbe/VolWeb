@@ -1,17 +1,18 @@
 from django import forms
 from .models import UploadInvestigation, ProcessDump, FileDump
-from django.forms import ModelForm, TextInput, Textarea, FileField, Select
+from django.forms import CheckboxInput, ModelForm, TextInput, Textarea, FileField, Select
 
 class UploadFileForm(forms.ModelForm):
     class Meta:
         model = UploadInvestigation
-        fields = ('name', 'title', 'description', 'status','os_version','investigators')
+        fields = ('name', 'title', 'description', 'status','os_version','investigators','process_antivirus')
         widgets = {
                 'title': TextInput(attrs={'class':'form-control','type':'text', 'placeholder':'Hostname', 'required':''}),
                 'description': Textarea(attrs={"class":"form-control", "rows":"4", "required":"", 'placeholder': 'Example : Client, machine usage,...'}),
                 'os_version': Select(attrs={'value':'Windows','class': 'form-select'}),
                 'investigators': TextInput(attrs={'class':'d-none'}),
                 'status': TextInput(attrs={'class':'d-none'}),
+                'process_antivirus': CheckboxInput(),
         }
 
 class ManageInvestigation(forms.Form):

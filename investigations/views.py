@@ -50,6 +50,7 @@ def newinvest(request):
             existingPath = request.POST['existingPath']
             end = request.POST['eof']
             nextSlice = request.POST['nextSlice']
+            process_antivirus = form.cleaned_data['process_antivirus']
         else:
             return JsonResponse({'data': form.errors})
         if file=="" or fileName=="" or existingPath=="" or end=="" or nextSlice=="":
@@ -72,6 +73,7 @@ def newinvest(request):
                 FileFolder.eof = end
                 FileFolder.name = fileName
                 FileFolder.uid = uid
+                FileFolder.process_antivirus = process_antivirus
                 FileFolder.save()
                 if int(end):
                     res = JsonResponse({'data':'Uploaded Successfully','existingPath': fileName})

@@ -79,6 +79,7 @@ class FileUpload {
         const investDesc = document.getElementById('id_description');
         const filefield = document.getElementById('fileupload');
         const uploadForm = document.getElementById('upload-form');
+        const process_antivirus = document.getElementById('id_process_antivirus').checked;
         uploadForm.classList.add('d-none');
         investName.innerHTML = "Investigation : " + title.value;
         investDesc.innerHTML = " OS Version : " + os_version.value;
@@ -109,6 +110,7 @@ class FileUpload {
         formData.append('os_version', os_version.value);
         formData.append('investigators', investigators.value);
         formData.append('uid', 'null');
+        formData.append('process_antivirus',process_antivirus);
         $.ajaxSetup({
             headers: {
                 "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value,
