@@ -128,21 +128,31 @@
                 <button class='btn border-sm border-dark btn-light btn-sm' type='button' style='margin-right: 10px;' onclick=CancelAnalysis('" + case_id + "');>Cancel Analysis</button>\
                 ");
               }
+              // Complete
               if (response['result'][0].fields.status == "2") {
                 $('.invest-actions').html("\
                 <form style='all: unset;' id='reviewform' action=\"{% url 'reviewinvest' %}\" method='GET'>\
                   <input type='hidden' name='sa_case_id' value='" + case_id + "'>\
                   <input class='btn border-sm border-light  btn-dark btn-sm' type='submit' style='margin-right: 10px;' value='Review results'>\
                 </form>\
+                <form style='all: unset;' id='reviewform' action=\"{% url 'analyser' %}\" method='GET'>\
+                  <input type='hidden' name='sa_case_id' value='" + case_id + "'>\
+                  <input class='btn border-sm border-light  btn-dark btn-sm' type='submit' style='margin-right: 10px;' value='Investigate results'>\
+                </form>\
                 <button class='btn border-sm border-light btn-dark btn-sm' type='button' style='margin-right: 10px;' onclick=StartAnalysis('" + case_id + "');>Restart Analysis</button>\
                 <button class='btn btn-danger btn-sm' type='button' style='margin-right: 10px;'' onclick=DeleteAnalysis('" + case_id + "');>Delete Analysis</button>\
                 ");
               }
+              // Partial Results
               if (response['result'][0].fields.status == "4") {
                 $('.invest-actions').html("\
                 <form style='all: unset;' id='reviewform' action=\"{% url 'reviewinvest' %}\" method='GET'>\
                   <input type='hidden' name='sa_case_id' value='" + case_id + "'>\
                   <input class='btn border-sm border-light btn-dark btn-sm' type='submit' style='margin-right: 10px;' value='Review results'>\
+                </form>\
+                <form style='all: unset;' id='reviewform' action=\"{% url 'analyser' %}\" method='GET'>\
+                  <input type='hidden' name='sa_case_id' value='" + case_id + "'>\
+                  <input class='btn border-sm border-light  btn-dark btn-sm' type='submit' style='margin-right: 10px;' value='Investigate results'>\
                 </form>\
                 <button class='btn border-sm border-light btn-dark btn-sm' type='button' style='margin-right: 10px;' onclick=StartAnalysis('" + case_id + "');>Restart Analysis</button>\
                 <button class='btn btn-danger btn-sm' type='button' style='margin-right: 10px;'' onclick=DeleteAnalysis('" + case_id + "');>Delete Analysis</button>\
