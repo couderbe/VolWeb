@@ -22,16 +22,12 @@ def analyser(request):
     processes = [Process(name=elt['ImageFileName'],
                          pid=elt['PID'], ppid=elt['PPID'], sessionId=elt['SessionId'], wow64=elt['Wow64'], createTime=elt['CreateTime'], exitTime=elt['ExitTime']) for elt in investData['psscan']]
     dmp.children.extend(processes)
-    context = [{"name": "Analysis", "children": [{"name": dmp.name, "uid": 25, "children": [
-        {"name": "Process 1", "uid": 13, "template": {"tooltipText": 'PID: {uid}'},
-         "userData": {"string": "Une chaîne de test", "integer": 1999}},
-        {"name": "Process 2", "uid": 14, "pid": 6666, "template":
-         {"tooltipText": "PID: {pid}"}}]}, ]}]
     analysis = Analysis("Analyse")
     analysis.loadDump(investData)
     print(analysis.toChart())
-    dataJSON = dumps(analysis.toChart())
+    dataJSON = dumps(analysis.toDict())
+    #dataJSON = dumps(analysis.toChart())
     #dataJSON = dumps(context)
     groups = dumps([sub.__name__ for sub in Node.__subclasses__()])
     print(groups)
-    return render(request, 'analyser/analyser.html', {'data': dataJSON,'groups':groups})
+    return render(request, 'analyser/analyser.html', {'data': dataJSON,'groups':groups})#,'dataTree':dumps(analysis.toDict())})

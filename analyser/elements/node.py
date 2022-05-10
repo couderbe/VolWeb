@@ -41,10 +41,11 @@ class Node():
         self._children = value
 
     def toDict(self) -> dict:
-        return {"group":self.__class__.__name__,"name": self.name, "id": str(self.uid)}
+        return {"group": self.__class__.__name__, "name": self.name, "id": str(self.uid), "isHidden": False, "isCollapsed": False, "children": [elt.toDict() for elt in self.children]}
 
     def toChart(self) -> dict:
-        jsonChart = {"nodes":[self.toDict()],"edges":[{"from":str(self.uid),"to":str(elt.uid)}for elt in self.children]}
+        jsonChart = {"nodes": [self.toDict()], "edges": [{"from": str(
+            self.uid), "to": str(elt.uid)}for elt in self.children]}
         for child in self.children:
             jsonChart["nodes"] += child.toChart()["nodes"]
             jsonChart["edges"] += child.toChart()["edges"]

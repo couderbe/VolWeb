@@ -13,52 +13,137 @@
     html,
     body,
     #chartdiv {
+        position: absolute;
         width: 100%;
         height: 100%;
         margin: 0;
         padding: 0;
+        z-index: 1;
+    }
+
+    #filter {
+        position: absolute;
+        margin-left: 20px;
+        z-index: 2;
     }
 </style>
 <link rel="stylesheet" href="{% static '/css/analyser.css' %}">
 
 <div id="chartdiv"></div>
+<div id="filter">
+    <fieldset>
+        <legend>Filters</legend>
+        <div>
+            <input type="checkbox" id="suspicious" name="suspicious">
+            <label for="suspicious">Suspicious</label>
+        </div>
+
+        <div>
+            <input type="checkbox" id="commands" name="commands" checked>
+            <label for="commands">Commands</label>
+        </div>
+    </fieldset>
+</div>
 
 
 <script>
-    var data = JSON.parse("{{data|escapejs}}");
-    var chart = anychart.graph(data);
+    
     var groups = JSON.parse("{{groups|escapejs}}");
+    var dataTree = JSON.parse("{{data|escapejs}}");
+    var groupsColors = {};
+
+    function treeToGraph(tree) {
+        var nodes = [];
+        var edges = [];
+        nodes.push({ 'name': tree.name, 'id': tree.id, 'group': tree.group, 'isHidden': tree.isHidden });
+        tree.children.forEach(element => {
+            if (!(element.isHidden)) {
+                edges.push({ 'from': tree.id, 'to': element.id });
+                data = treeToGraph(element);
+                nodes = nodes.concat(data['nodes']);
+                edges = edges.concat(data['edges']);
+            }
+        });
+        return { 'nodes': nodes, 'edges': edges };
+    }
+
+    var data = treeToGraph(dataTree);
+    var chart = anychart.graph(data);
+
+    function findIdInTree(tree, id) {
+        for (var child of tree['children']) {
+            if (child.id == id) {
+                return child;
+            }
+        }
+        for (var child of tree.children) {
+            result = findIdInTree(child, id);
+            if (result !== null) {
+                return result;
+            }
+        }
+        return null;
+    }
+
+
+    function updateGraph() {
+        //TODO This forces redraw of the graph look for a better way, this one is too slow
+        chart.data(treeToGraph(dataTree));
+    }
+
+    function hideChildren(parent, value) {
+        parent['children'].forEach(element => {
+            element.isHidden = value;
+            hideChildren(element, value);
+        });
+    }
+
+
+
+    document.getElementById('commands').addEventListener('change', function (event) {
+
+        function recursiveSearch(parent) {
+            for (var child of parent['children']) {
+                if (child.group === "Command") {
+                    child.isHidden = !event.currentTarget.checked;
+                    hideChildren(child, !event.currentTarget.checked);
+                }
+                else{
+                    recursiveSearch(child);
+                }
+            }
+        }
+
+        recursiveSearch(dataTree);
+        updateGraph();
+    });
 
     anychart.onDocumentReady(function () {
 
-
-        chart.nodes().labels({ format: "{%name}" })
-
-        chart.listen("click", function (e) {
+        chart.listen("dblClick", function (e) {
             var tag = e.domTarget.tag;
             if (tag) {
                 console.log(tag);
                 if (tag.type === 'node') {
-                    for (var i = 0; i < data.nodes.length; i++) {
-                        if (data.nodes[i].id === tag.id) {
-                            // var newMapping = mapping.filter("id", function (value) {
-                            //     return value !== tag.id;
-                            // });
-                            // chart.data(newMapping);
-                            // break;
-                        }
+                    node = findIdInTree(dataTree, tag.id);
+                    console.log(node);
+                    if (node.isCollapsed) {
+                        hideChildren(node, false);
+                        node.isCollapsed = false;
+                    }
+                    else {
+                        hideChildren(node, true);
+                        node.isCollapsed = true;
                     }
                 }
             }
+            updateGraph();
         });
 
-        // set settings for each group
         for (var i = 0; i < groups.length; i++) {
-            // get group
             var group = chart.group(groups[i]);
 
             if (typeof group !== 'undefined') {
-                // set group labels settings
                 group
                     .labels()
                     .enabled(true)
@@ -66,18 +151,16 @@
                     .position('right-center')
                     .padding(0, -5)
                     .fontColor(anychart.palettes.defaultPalette[i]);
-                // {enable:true,anchor:'left-center',position:'right-center',fontColor:anychart.palettes.defaultPalette[i]}
-
-                // set group nodes stroke and fill
-                group.stroke(anychart.palettes.defaultPalette[i]);
-                group.fill(anychart.palettes.defaultPalette[i]);
+                groupsColors[groups[i]] = anychart.palettes.defaultPalette[i];
+                group.fill(groupsColors[groups[i]]);
+                group.stroke(null);
             }
         }
 
+        chart.nodes().labels({ format: "{%name}" });
+
         // set container id for the chart
-        chart.container('chartdiv');
-        // initiate chart drawing
-        chart.draw();
+        chart.container('chartdiv').draw();
     });
 
     $(document).ready(function () {
