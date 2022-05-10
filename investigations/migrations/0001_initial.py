@@ -42,15 +42,19 @@ class Migration(migrations.Migration):
                 ('pid', models.IntegerField()),
                 ('filename', models.CharField(max_length=255)),
                 ('case_id', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='investigations.uploadinvestigation')),
+                ('is_malicious', models.BooleanField(default=False)),
+                ('threat',models.CharField(max_length=255,default="")),
             ],
         ),
         migrations.CreateModel(
             name='FileDump',
             fields=[
                 ('file_dump_id', models.AutoField(primary_key=True, serialize=False)),
-                ('offset', models.IntegerField()),
+                ('offset', models.BigIntegerField()),
                 ('filename', models.CharField(max_length=255)),
                 ('case_id', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='investigations.uploadinvestigation')),
+                ('is_malicious', models.BooleanField(default=False)),
+                ('threat',models.CharField(max_length=255,default="")),
             ],
         ),
     ]
