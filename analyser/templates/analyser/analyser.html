@@ -140,6 +140,8 @@
             updateGraph();
         });
 
+        var imgPath = "{% static '/images/analyser/' %}";
+
         for (var i = 0; i < groups.length; i++) {
             var group = chart.group(groups[i]);
 
@@ -152,7 +154,9 @@
                     .padding(0, -5)
                     .fontColor(anychart.palettes.defaultPalette[i]);
                 groupsColors[groups[i]] = anychart.palettes.defaultPalette[i];
-                group.fill(groupsColors[groups[i]]);
+                group.shape('square');
+                group.height(18);
+                group.fill({src: imgPath + groups[i] + ".svg"});
                 group.stroke(null);
             }
         }
