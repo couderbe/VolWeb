@@ -6,7 +6,7 @@ from analyser.elements.thread import Thread
 
 
 class Process(Node):
-    def __init__(self, name: str = None, pid: int = None, ppid: int = None, sessionId: int = None, wow64: bool = None, createTime: datetime = None, exitTime: datetime = None) -> None:
+    def __init__(self, name: str = None, pid: int = None, ppid: int = None, sessionId: int = None, wow64: bool = None, createTime: datetime = None, exitTime: datetime = None, is_malicious: bool = None, threat: str = None) -> None:
         super().__init__(name)
         self.pid = pid
         self.ppid = ppid
@@ -14,6 +14,8 @@ class Process(Node):
         self.wow64 = wow64
         self.createTime = createTime
         self.exitTime = exitTime
+        self.is_malicious = is_malicious
+        self.threat = threat
 
     @property
     def pid(self):
@@ -95,6 +97,32 @@ class Process(Node):
         except TypeError:
             self._exitTime = None
 
+    @property
+    def is_malicious(self) -> bool:
+        return self._is_malicious
+
+    @is_malicious.setter
+    def is_malicious(self, value: bool) -> None:
+        try:
+            self._is_malicious = bool(value)
+        except ValueError:
+            self._is_malicious = None
+        except TypeError:
+            self._is_malicious = None
+
+    @property
+    def threat(self) -> str:
+        return self._threat
+
+    @threat.setter
+    def threat(self, value: str) -> None:
+        try:
+            self._threat = str(value)
+        except ValueError:
+            self._threat = None
+        except TypeError:
+            self._threat = None
+
     def nbrThreads(self):
         return len(self.threads)
 
@@ -104,7 +132,7 @@ class Process(Node):
     def toDict(self) -> dict:
         data = super().toDict()
         data.update({"group": self.__class__.__name__, "pid": self.pid, "ppid": self.ppid, "sessionId": self.sessionId,
-                     "wow64": self.wow64, "exitTime": str(self.exitTime), "createTime": str(self.createTime)})
+                     "wow64": self.wow64, "exitTime": str(self.exitTime), "createTime": str(self.createTime), "is_malicious": self.is_malicious, "threat": self.threat})
         return data
 
     def __str__(self) -> str:

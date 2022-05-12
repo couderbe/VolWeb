@@ -15,12 +15,20 @@ class Analysis(Node):
                     sha1=dumpData['hash']['sha1'], sha256=dumpData['hash']['sha256'])
         self.children.append(dump)
 
-        #Create the processes and add them to the dump
+        #Create the processes and add them to the dump (psscan)
         processes = [Process(name=elt['ImageFileName'],
                              pid=elt['PID'], ppid=elt['PPID'], sessionId=elt['SessionId'], wow64=elt['Wow64'], createTime=elt['CreateTime'], exitTime=elt['ExitTime']) for elt in dumpData['psscan']]
+
+        if 'process_antivirus' in dumpData:
+            for proc in processes:
+                for scan in dumpData['process_antivirus']:
+                    if scan['PID'] == proc.pid:
+                        proc.is_malicious = scan['is_malicious']
+                        proc.threat = scan['threat']
+                        break
         dump.children.extend(processes)
 
-        # Create Commands and add them to the processes
+        # Create Commands and add them to the processes (cmdline)
         procs = dump.processes()
         for elt in dumpData['cmdline']:
             for proc in procs:

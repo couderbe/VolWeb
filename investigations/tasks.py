@@ -308,13 +308,25 @@ def windows_memory_analysis(dump_path,case):
         PARTIAL_RESULTS = True
     update_progress(case)
 
+    if case.process_antivirus and psscan['psscan'] != [['Corrupted Dump']]:
+        #Dump all processes from psscan and analyse them with clamav
+        process_antivirus = []
+        for ps in psscan['psscan']:
+            print(str(case.id),str(ps['PID']))
+            file_path = dump_memory_pid(str(case.id),str(ps["PID"]))
+            print(file_path)
+            is_malicious,threat = clamav_file(f'Cases/Results/process_dump_{case.id}/{file_path}')
+            print(ps["PID"],is_malicious,threat)
+            process_antivirus.append({'PID':ps["PID"],'is_malicious':is_malicious,'threat':threat})
+        process_antivirus = {'process_antivirus': process_antivirus}
+
     #Save the result to json
     results = { **sha256_hash, **malwarefind, **pstree, **psscan,
               **netscan, **netstat, **netgraph,
               **graph, **cmdline, **privileges,
               **env, **timeline, **timeline_chart,
               **filescan, **hashdump, **iocmatch, **skeleton,
-              **lsadump, **cachedump, **hivelist }
+              **lsadump, **cachedump, **hivelist, **process_antivirus}
     with open('Cases/Results/'+str(case.id)+'.json', 'w') as json_file:
         json.dump(results, json_file)
     if PARTIAL_RESULTS:

@@ -47,7 +47,7 @@
 
 
 <script>
-    
+
     var groups = JSON.parse("{{groups|escapejs}}");
     var dataTree = JSON.parse("{{data|escapejs}}");
     var groupsColors = {};
@@ -98,17 +98,19 @@
         });
     }
 
-
-
-    document.getElementById('commands').addEventListener('change', function (event) {
-
+    function filter(){
         function recursiveSearch(parent) {
             for (var child of parent['children']) {
-                if (child.group === "Command") {
-                    child.isHidden = !event.currentTarget.checked;
-                    hideChildren(child, !event.currentTarget.checked);
+                child.isHidden = false;
+                if (isCommand(child) && !document.getElementById('commands').checked){
+                    child.isHidden = true;
+                    hideChildren(child, true);
                 }
-                else{
+                else if(child.group === "Process" && !isMalicious(child) && document.getElementById('suspicious').checked){
+                    child.isHidden = true;
+                    hideChildren(child, true);
+                }
+                else {
                     recursiveSearch(child);
                 }
             }
@@ -116,6 +118,52 @@
 
         recursiveSearch(dataTree);
         updateGraph();
+    }
+
+    function isCommand(node){
+        return node.group === "Command";
+    }
+
+    function isMalicious(node){
+        return node.is_malicious === true;
+    }
+
+    document.getElementById('commands').addEventListener('change', function (event) {
+        filter();
+        // function recursiveSearch(parent) {
+        //     for (var child of parent['children']) {
+        //         if (child.group === "Command") {
+        //             child.isHidden = !event.currentTarget.checked;
+        //             hideChildren(child, !event.currentTarget.checked);
+        //         }
+        //         else {
+        //             recursiveSearch(child);
+        //         }
+        //     }
+        // }
+
+        // recursiveSearch(dataTree);
+        // updateGraph();
+    });
+
+    document.getElementById('suspicious').addEventListener('change', function (event) {
+        filter();
+        // function recursiveSearch(parent) {
+        //     for (var child of parent['children']) {
+        //         if (child.group === "Process") {
+        //             if (child.is_malicious === true) {
+        //                 child.isHidden = !event.currentTarget.checked;
+        //                 hideChildren(child, !event.currentTarget.checked);
+        //             }
+        //         }
+        //         else {
+        //             recursiveSearch(child);
+        //         }
+        //     }
+        // }
+
+        // recursiveSearch(dataTree);
+        // updateGraph();
     });
 
     anychart.onDocumentReady(function () {
@@ -156,7 +204,7 @@
                 groupsColors[groups[i]] = anychart.palettes.defaultPalette[i];
                 group.shape('square');
                 group.height(18);
-                group.fill({src: imgPath + groups[i] + ".svg"});
+                group.fill({ src: imgPath + groups[i] + ".svg" });
                 group.stroke(null);
             }
         }
