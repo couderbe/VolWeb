@@ -45,7 +45,7 @@
     </fieldset>
 </div>
 
-
+{% csrf_token %}
 <script>
 
     var groups = JSON.parse("{{groups|escapejs}}");
@@ -130,43 +130,40 @@
 
     document.getElementById('commands').addEventListener('change', function (event) {
         filter();
-        // function recursiveSearch(parent) {
-        //     for (var child of parent['children']) {
-        //         if (child.group === "Command") {
-        //             child.isHidden = !event.currentTarget.checked;
-        //             hideChildren(child, !event.currentTarget.checked);
-        //         }
-        //         else {
-        //             recursiveSearch(child);
-        //         }
-        //     }
-        // }
-
-        // recursiveSearch(dataTree);
-        // updateGraph();
     });
 
     document.getElementById('suspicious').addEventListener('change', function (event) {
         filter();
-        // function recursiveSearch(parent) {
-        //     for (var child of parent['children']) {
-        //         if (child.group === "Process") {
-        //             if (child.is_malicious === true) {
-        //                 child.isHidden = !event.currentTarget.checked;
-        //                 hideChildren(child, !event.currentTarget.checked);
-        //             }
-        //         }
-        //         else {
-        //             recursiveSearch(child);
-        //         }
-        //     }
-        // }
-
-        // recursiveSearch(dataTree);
-        // updateGraph();
     });
 
     anychart.onDocumentReady(function () {
+
+        chart.listen("click", function (e) {
+            const csrf = document.getElementsByName('csrfmiddlewaretoken');
+            var tag = e.domTarget.tag;
+            if (tag) {
+                if (tag.type === 'node') {
+                    const fd = new FormData();
+                    fd.append('csrfmiddlewaretoken', csrf[0].value);
+                    fd.append('id',tag.id);
+                    $.ajax({
+                        type:'POST',
+                        url: "{% url 'get_process_info' %}",
+                        enctype: 'multipart/form-data',
+                        processData: false,
+                        contentType: false,
+                        data: fd,
+                        success: function (data) {
+                          console.log(data);
+                        },
+                        error: function (error) {
+                          console.log(error);  
+                        },
+                    });
+                }
+            
+            }
+        });
 
         chart.listen("dblClick", function (e) {
             var tag = e.domTarget.tag;

@@ -319,6 +319,8 @@ def windows_memory_analysis(dump_path,case):
             print(ps["PID"],is_malicious,threat)
             process_antivirus.append({'PID':ps["PID"],'is_malicious':is_malicious,'threat':threat})
         process_antivirus = {'process_antivirus': process_antivirus}
+    else:
+        process_antivirus = {}
 
     #Save the result to json
     results = { **sha256_hash, **malwarefind, **pstree, **psscan,
