@@ -16,7 +16,7 @@ class Dump(Node):
     @property
     def md5(self) -> str:
         return self._md5
-    
+
     @md5.setter
     def md5(self, value: str) -> None:
         try:
@@ -25,11 +25,11 @@ class Dump(Node):
             self._md5 = None
         except TypeError:
             self._md5 = None
-    
+
     @property
     def sh1(self) -> str:
         return self._sh1
-    
+
     @sh1.setter
     def sh1(self, value: str) -> None:
         try:
@@ -42,7 +42,7 @@ class Dump(Node):
     @property
     def sha256(self) -> str:
         return self._sha256
-    
+
     @sha256.setter
     def sha256(self, value: str) -> None:
         try:
@@ -54,5 +54,6 @@ class Dump(Node):
 
     def toDict(self) -> dict:
         data = super().toDict()
-        data.update({"group": self.__class__.__name__})
+        data.update({"group": self.__class__.__name__,
+                    "md5": self.md5, "sha1": self.sha1, "sha256": self.sha256})
         return data
