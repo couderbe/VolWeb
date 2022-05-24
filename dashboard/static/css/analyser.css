@@ -1,0 +1,101 @@
+.navbar {
+  z-index: 4;
+}
+
+.sidebar {
+  height: 100%;
+  /* 100% Full-height */
+  width: 0;
+  /* 0 width - change this with JavaScript */
+  position: fixed;
+  /* Stay in place */
+  z-index: 3;
+  /* Stay on top */
+  bottom: auto;
+  right: 0;
+  background-color: rgb(248, 248, 248);
+  overflow-x: hidden;
+  /* Disable horizontal scroll */
+  transition: 0.5s;
+  /* 0.5 second transition effect to slide in the sidebar */
+}
+
+/* The sidebar links */
+.sidebar td {
+  padding: 4px 4px 4px 16px;
+
+}
+
+.value {
+  overflow-wrap: break-word;
+}
+
+.key {
+  overflow-wrap: normal;
+  font-weight: bold;
+}
+
+.sidebar #name {
+  font-weight: bold;
+  font-size: 1.5em;
+  overflow-wrap: anywhere;
+  font-size: 1.5vw;
+  max-width: 25vw;
+  text-align: center;
+}
+
+.sidebar #sidebar-icon {
+  max-width: 50;
+  min-width: 50;
+}
+
+.sidebar .sidebar-head {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  margin-bottom: 2.5em;
+}
+
+
+/* When you mouse over the navigation links, change their color */
+.sidebar a:hover {
+  color: #f1f1f1;
+}
+
+/* Position and style the close button (top right corner) */
+.sidebar .closebtn {
+  top: 0;
+  font-size: 36px;
+}
+
+/* The button used to open the sidebar */
+.closebtn {
+  font-size: 20px;
+  cursor: pointer;
+  background-color: transparent;
+  color: black;
+  /* padding: 10px 15px; */
+  border: none;
+}
+
+.closebtn:hover {
+  color: #444;
+}
+
+/* Style page content - use this if you want to push the page content to the right when you open the side navigation */
+#main {
+  transition: margin-left .5s;
+  /* If you want a transition effect */
+  padding: 0px;
+}
+
+/* On smaller screens, where height is less than 450px, change the style of the sidenav (less padding and a smaller font size) */
+@media screen and (max-height: 450px) {
+  .sidebar {
+    padding-top: 15px;
+  }
+
+  .sidebar a {
+    font-size: 18px;
+  }
+}

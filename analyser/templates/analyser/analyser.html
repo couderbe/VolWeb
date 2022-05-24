@@ -23,34 +23,48 @@
 
     #filter {
         position: absolute;
-        margin-left: 20px;
+        margin-left: 1em;
         z-index: 2;
     }
 </style>
 <link rel="stylesheet" href="{% static '/css/analyser.css' %}">
 
-<div id="chartdiv"></div>
-<div id="filter">
-    <fieldset>
-        <legend>Filters</legend>
-        <div>
-            <input type="checkbox" id="suspicious" name="suspicious">
-            <label for="suspicious">Suspicious</label>
-        </div>
+<div id="main">
+    <div id="chartdiv"></div>
+    <div id="filter">
+        <fieldset>
+            <legend>Filters</legend>
+            <div>
+                <input type="checkbox" id="suspicious" name="suspicious">
+                <label for="suspicious">Suspicious</label>
+            </div>
 
-        <div>
-            <input type="checkbox" id="commands" name="commands" checked>
-            <label for="commands">Commands</label>
+            <div>
+                <input type="checkbox" id="commands" name="commands" checked>
+                <label for="commands">Commands</label>
+            </div>
+        </fieldset>
+    </div>
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-head">
+            <img id="sidebar-icon" src="" alt="Icon" class="image" width="50">
+            <label id="name"></label>
+            <a href="javascript:void(0)" class="closebtn" onclick="closeSidebar()">&times;</a>
         </div>
-    </fieldset>
+        <table id="sidebar-table">
+        </table>        
+    </div>
 </div>
+
+
 
 {% csrf_token %}
 <script>
-
     var groups = JSON.parse("{{groups|escapejs}}");
     var dataTree = JSON.parse("{{data|escapejs}}");
     var groupsColors = {};
+    const hiddenFields = ["isHidden", "isCollapsed", "children"];
+    const imgPath = "{% static '/images/analyser/' %}";
 
     function treeToGraph(tree) {
         var nodes = [];
@@ -98,15 +112,15 @@
         });
     }
 
-    function filter(){
+    function filter() {
         function recursiveSearch(parent) {
             for (var child of parent['children']) {
                 child.isHidden = false;
-                if (isCommand(child) && !document.getElementById('commands').checked){
+                if (isCommand(child) && !document.getElementById('commands').checked) {
                     child.isHidden = true;
                     hideChildren(child, true);
                 }
-                else if(child.group === "Process" && !isMalicious(child) && document.getElementById('suspicious').checked){
+                else if (child.group === "Process" && !isMalicious(child) && document.getElementById('suspicious').checked) {
                     child.isHidden = true;
                     hideChildren(child, true);
                 }
@@ -120,11 +134,11 @@
         updateGraph();
     }
 
-    function isCommand(node){
+    function isCommand(node) {
         return node.group === "Command";
     }
 
-    function isMalicious(node){
+    function isMalicious(node) {
         return node.is_malicious === true;
     }
 
@@ -136,6 +150,45 @@
         filter();
     });
 
+    function openSidebar() {
+        document.getElementById("sidebar").style.width = "20em";
+        document.getElementById("main").style.marginRight = "20em";
+    }
+
+    function closeSidebar() {
+        document.getElementById("sidebar").style.width = "0";
+        document.getElementById("main").style.marginRight = "0";
+    }
+
+    function sidebarFromItem(item) {
+
+        let table = document.getElementById("sidebar-table");
+        table.replaceChildren();
+        for (const [key, value] of Object.entries(nodeData)) {
+            if (!hiddenFields.includes(key)) {
+                if (key === "name") {
+                    document.getElementById("name").innerHTML = value;
+                }
+                else if(key === "group"){
+                    document.getElementById("sidebar-icon").setAttribute("src",imgPath + value + ".svg");
+                }
+                else {
+                    let row = table.insertRow();
+                    let th = document.createElement("td");
+                    th.classList.add("key");
+                    let text = document.createTextNode(key);
+                    th.appendChild(text);
+                    row.appendChild(th);
+                    th = document.createElement("td");
+                    th.classList.add("value");
+                    text = document.createTextNode(value);
+                    th.appendChild(text);
+                    row.appendChild(th);
+                }
+            }
+        }
+    }
+
     anychart.onDocumentReady(function () {
 
         chart.listen("click", function (e) {
@@ -143,25 +196,28 @@
             var tag = e.domTarget.tag;
             if (tag) {
                 if (tag.type === 'node') {
+                    nodeData = findIdInTree(dataTree, tag.id);
+                    sidebarFromItem(nodeData);
+                    openSidebar();
                     const fd = new FormData();
                     fd.append('csrfmiddlewaretoken', csrf[0].value);
-                    fd.append('id',tag.id);
+                    fd.append('id', tag.id);
                     $.ajax({
-                        type:'POST',
+                        type: 'POST',
                         url: "{% url 'get_process_info' %}",
                         enctype: 'multipart/form-data',
                         processData: false,
                         contentType: false,
                         data: fd,
                         success: function (data) {
-                          console.log(data);
+                            console.log(data);
                         },
                         error: function (error) {
-                          console.log(error);  
+                            console.log(error);
                         },
                     });
                 }
-            
+
             }
         });
 
@@ -185,7 +241,7 @@
             updateGraph();
         });
 
-        var imgPath = "{% static '/images/analyser/' %}";
+        
 
         for (var i = 0; i < groups.length; i++) {
             var group = chart.group(groups[i]);
@@ -218,6 +274,5 @@
         $('.spinner-main').hide();
 
     });
-
 </script>
 {% endblock content %}
