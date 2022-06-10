@@ -275,6 +275,7 @@ def reviewinvest(request):
             }
             context.update(forms)
             context.update(models)
+            print(context)
             return render(request, 'investigations/reviewinvest.html',context)
         else:
             form = ManageInvestigation()

@@ -2,271 +2,44 @@
 {% load static %}
 {% block content%}
 
-<script src="https://cdn.anychart.com/releases/v8/js/anychart-base.min.js"></script>
-<script src="https://cdn.anychart.com/releases/v8/js/anychart-graph.min.js"></script>
-<script src="https://cdn.anychart.com/releases/v8/js/anychart-data-adapter.min.js"></script>
-<script src="https://cdn.anychart.com/releases/v8/js/anychart-ui.min.js"></script>
-<script src="https://cdn.anychart.com/releases/v8/js/anychart-exports.min.js"></script>
-<link href="https://cdn.anychart.com/releases/v8/css/anychart-ui.min.css" type="text/css" rel="stylesheet">
-<link href="https://cdn.anychart.com/releases/v8/fonts/css/anychart-font.min.css" type="text/css" rel="stylesheet">
-<style type="text/css">
-    html,
-    body,
-    #chartdiv {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        z-index: 1;
-    }
-
-    #filter {
-        position: absolute;
-        margin-left: 1em;
-        z-index: 2;
-    }
-</style>
-<link rel="stylesheet" href="{% static '/css/analyser.css' %}">
+<script src="https://d3js.org/d3.v4.min.js"></script>
 
 <div id="main">
-    <div id="chartdiv"></div>
-    <div id="filter">
-        <fieldset>
-            <legend>Filters</legend>
-            <div>
-                <input type="checkbox" id="suspicious" name="suspicious">
-                <label for="suspicious">Suspicious</label>
-            </div>
+    <svg width="900" height="900">
 
-            <div>
-                <input type="checkbox" id="commands" name="commands" checked>
-                <label for="commands">Commands</label>
-            </div>
-        </fieldset>
-    </div>
-    <div id="sidebar" class="sidebar">
-        <div class="sidebar-head">
-            <img id="sidebar-icon" src="" alt="Icon" class="image" width="50">
-            <label id="name"></label>
-            <a href="javascript:void(0)" class="closebtn" onclick="closeSidebar()">&times;</a>
-        </div>
-        <table id="sidebar-table">
-        </table>        
-    </div>
+    </svg>
 </div>
 
 
 
 {% csrf_token %}
 <script>
-    var groups = JSON.parse("{{groups|escapejs}}");
-    var dataTree = JSON.parse("{{data|escapejs}}");
-    var groupsColors = {};
+    var analysis = JSON.parse("{{Analysis|escapejs}}");
+    var dumps = JSON.parse("{{Dump|escapejs}}");
+    // var processes = JSON.parse("{{Process|escapejs}}");
+    // var commands = JSON.parse("{{Command|escapejs}}");
+    // var connections = JSON.parse("{{Connection|escapejs}}");
+    // var files = JSON.parse("{{File|escapejs}}");
     const hiddenFields = ["isHidden", "isCollapsed", "children"];
     const imgPath = "{% static '/images/analyser/' %}";
 
-    function treeToGraph(tree) {
-        var nodes = [];
-        var edges = [];
-        nodes.push({ 'name': tree.name, 'id': tree.id, 'group': tree.group, 'isHidden': tree.isHidden });
-        tree.children.forEach(element => {
-            if (!(element.isHidden)) {
-                edges.push({ 'from': tree.id, 'to': element.id });
-                data = treeToGraph(element);
-                nodes = nodes.concat(data['nodes']);
-                edges = edges.concat(data['edges']);
-            }
-        });
-        return { 'nodes': nodes, 'edges': edges };
-    }
+    var svg = d3.select("svg");
+    var width = svg.attr("width");
+    var height = svg.attr("height");
+    var nodes = [{ name: "A" }, { name: "B" }];
+    var edges = [{ source: "A", target: "B" }];
 
-    var data = treeToGraph(dataTree);
-    var chart = anychart.graph(data);
+    var simulation = d3.forceSimulation()
+    .force("link", d3.forceLink().id(function(d) { return d.id; }))
+    .force("charge", d3.forceManyBody())
+    .force("center", d3.forceCenter(width / 2, height / 2));
 
-    function findIdInTree(tree, id) {
-        for (var child of tree['children']) {
-            if (child.id == id) {
-                return child;
-            }
-        }
-        for (var child of tree.children) {
-            result = findIdInTree(child, id);
-            if (result !== null) {
-                return result;
-            }
-        }
-        return null;
-    }
-
-
-    function updateGraph() {
-        //TODO This forces redraw of the graph look for a better way, this one is too slow
-        chart.data(treeToGraph(dataTree));
-    }
-
-    function hideChildren(parent, value) {
-        parent['children'].forEach(element => {
-            element.isHidden = value;
-            hideChildren(element, value);
-        });
-    }
-
-    function filter() {
-        function recursiveSearch(parent) {
-            for (var child of parent['children']) {
-                child.isHidden = false;
-                if (isCommand(child) && !document.getElementById('commands').checked) {
-                    child.isHidden = true;
-                    hideChildren(child, true);
-                }
-                else if (child.group === "Process" && !isMalicious(child) && document.getElementById('suspicious').checked) {
-                    child.isHidden = true;
-                    hideChildren(child, true);
-                }
-                else {
-                    recursiveSearch(child);
-                }
-            }
-        }
-
-        recursiveSearch(dataTree);
-        updateGraph();
-    }
-
-    function isCommand(node) {
-        return node.group === "Command";
-    }
-
-    function isMalicious(node) {
-        return node.is_malicious === true;
-    }
-
-    document.getElementById('commands').addEventListener('change', function (event) {
-        filter();
-    });
-
-    document.getElementById('suspicious').addEventListener('change', function (event) {
-        filter();
-    });
-
-    function openSidebar() {
-        document.getElementById("sidebar").style.width = "20em";
-        document.getElementById("main").style.marginRight = "20em";
-    }
-
-    function closeSidebar() {
-        document.getElementById("sidebar").style.width = "0";
-        document.getElementById("main").style.marginRight = "0";
-    }
-
-    function sidebarFromItem(item) {
-
-        let table = document.getElementById("sidebar-table");
-        table.replaceChildren();
-        for (const [key, value] of Object.entries(nodeData)) {
-            if (!hiddenFields.includes(key)) {
-                if (key === "name") {
-                    document.getElementById("name").innerHTML = value;
-                }
-                else if(key === "group"){
-                    document.getElementById("sidebar-icon").setAttribute("src",imgPath + value + ".svg");
-                }
-                else {
-                    let row = table.insertRow();
-                    let th = document.createElement("td");
-                    th.classList.add("key");
-                    let text = document.createTextNode(key);
-                    th.appendChild(text);
-                    row.appendChild(th);
-                    th = document.createElement("td");
-                    th.classList.add("value");
-                    text = document.createTextNode(value);
-                    th.appendChild(text);
-                    row.appendChild(th);
-                }
-            }
-        }
-    }
-
-    anychart.onDocumentReady(function () {
-
-        chart.listen("click", function (e) {
-            const csrf = document.getElementsByName('csrfmiddlewaretoken');
-            var tag = e.domTarget.tag;
-            if (tag) {
-                if (tag.type === 'node') {
-                    nodeData = findIdInTree(dataTree, tag.id);
-                    sidebarFromItem(nodeData);
-                    openSidebar();
-                    const fd = new FormData();
-                    fd.append('csrfmiddlewaretoken', csrf[0].value);
-                    fd.append('id', tag.id);
-                    $.ajax({
-                        type: 'POST',
-                        url: "{% url 'get_process_info' %}",
-                        enctype: 'multipart/form-data',
-                        processData: false,
-                        contentType: false,
-                        data: fd,
-                        success: function (data) {
-                            console.log(data);
-                        },
-                        error: function (error) {
-                            console.log(error);
-                        },
-                    });
-                }
-
-            }
-        });
-
-        chart.listen("dblClick", function (e) {
-            var tag = e.domTarget.tag;
-            if (tag) {
-                console.log(tag);
-                if (tag.type === 'node') {
-                    node = findIdInTree(dataTree, tag.id);
-                    console.log(node);
-                    if (node.isCollapsed) {
-                        hideChildren(node, false);
-                        node.isCollapsed = false;
-                    }
-                    else {
-                        hideChildren(node, true);
-                        node.isCollapsed = true;
-                    }
-                }
-            }
-            updateGraph();
-        });
-
-        
-
-        for (var i = 0; i < groups.length; i++) {
-            var group = chart.group(groups[i]);
-
-            if (typeof group !== 'undefined') {
-                group
-                    .labels()
-                    .enabled(true)
-                    .anchor('left-center')
-                    .position('right-center')
-                    .padding(0, -5)
-                    .fontColor(anychart.palettes.defaultPalette[i]);
-                groupsColors[groups[i]] = anychart.palettes.defaultPalette[i];
-                group.shape('square');
-                group.height(18);
-                group.fill({ src: imgPath + groups[i] + ".svg" });
-                group.stroke(null);
-            }
-        }
-
-        chart.nodes().labels({ format: "{%name}" });
-
-        // set container id for the chart
-        chart.container('chartdiv').draw();
-    });
+    var node = svg.append("g")
+        .selectAll("circle")
+        .data(graph.nodes)
+        .enter()
+        .append("circle")
+        .attr("r", 5)
 
     $(document).ready(function () {
         $('.container').show();
