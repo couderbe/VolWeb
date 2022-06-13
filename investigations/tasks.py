@@ -1,3 +1,4 @@
+from analyser.models import Analysis, Dump, Process
 from .models import *
 from iocs.models import IOC
 from .celery import app
@@ -58,6 +59,23 @@ def windows_memory_analysis(dump_path,case):
     else:
         case.status = "2"
     case.save()
+
+    # Generate model for analyser
+    id = case.id
+    analysis = Analysis(name=str(id),investigation_id=id)
+    analysis.save()
+    imageSignature = ImageSignature.objects.get(investigation_id = id)
+    dump = Dump(analysis=analysis,md5=imageSignature.md5,sha1=imageSignature.sha1,sha256=imageSignature.sha256,investigation_id=id)
+    dump.save()
+    analysis.children = json.dumps({'children': [str(dump.id)]})
+    analysis.save()
+    psscan = PsScan.objects.filter(investigation_id = id)
+    print(psscan)
+    for ps in psscan:
+        print(ps)
+        # Process(dump=dump,pid=ps.PID,ppid=ps.PPID,session_id=ps.SessionId,wow64=ps.Wow64,create_time=ps.CreateTime,exit_time=ps.ExitTime).save()
+        proc = Process(dump=dump,ps_scan=ps,investigation_id=id)
+        proc.save()
     return
 
 """Linux Memory Analysis (Not implemented yet)"""

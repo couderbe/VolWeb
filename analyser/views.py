@@ -27,25 +27,11 @@ def analyser_old(request):
 
 @login_required
 def analyser(request):
-
-    def load_dump(id: int):
-        analysis = Analysis(name=str(id),investigation_id=id)
-        analysis.save()
-        imageSignature = ImageSignature.objects.get(investigation_id = id)
-        dump = Dump(analysis=analysis,md5=imageSignature.md5,sha1=imageSignature.sha1,sha256=imageSignature.sha256,investigation_id=id)
-        dump.save()
-        analysis.children = json.dumps({'children': [str(dump.id)]})
-        analysis.save()
-
-
     if request.method == 'GET':
         form = ManageInvestigation(request.GET)
         if form.is_valid():
             
             id = form.cleaned_data['sa_case_id']
-            print("----------------------------------")
-            load_dump(id)
-            print("----------------------------------")
             case = UploadInvestigation.objects.get(pk=id)
             context = {}
             context['case'] = case
@@ -54,7 +40,7 @@ def analyser(request):
             models = {
                 'Analysis':serializers.serialize("json",Analysis.objects.filter(investigation_id = id)),
                 'Dump':serializers.serialize("json",Dump.objects.filter(investigation_id = id)),
-                # 'Process' : Process.objects.get(investigation_id = id),
+                'Process' : serializers.serialize("json",Process.objects.filter(investigation_id = id)),
                 # 'Command': Command.objects.filter(investigation_id = id),
                 # 'Connection': Connection.objects.get(investigation_id = id),
                 # 'File': File.objects.filter(investigation_id = id),

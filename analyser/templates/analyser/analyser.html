@@ -2,11 +2,12 @@
 {% load static %}
 {% block content%}
 
-<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
 
 <div id="main">
-    <svg width="900" height="900">
-
+    <svg id="graph" width="960" height="500">
+        <g class="links"></g>
+        <g class="nodes"></g>
     </svg>
 </div>
 
@@ -16,36 +17,161 @@
 <script>
     var analysis = JSON.parse("{{Analysis|escapejs}}");
     var dumps = JSON.parse("{{Dump|escapejs}}");
-    // var processes = JSON.parse("{{Process|escapejs}}");
+    var processes = JSON.parse("{{Process|escapejs}}");
     // var commands = JSON.parse("{{Command|escapejs}}");
     // var connections = JSON.parse("{{Connection|escapejs}}");
     // var files = JSON.parse("{{File|escapejs}}");
-    const hiddenFields = ["isHidden", "isCollapsed", "children"];
+    // const hiddenFields = ["isHidden", "isCollapsed", "children"];
     const imgPath = "{% static '/images/analyser/' %}";
 
-    var svg = d3.select("svg");
+    var svg = d3.select("#graph");
     var width = svg.attr("width");
     var height = svg.attr("height");
-    var nodes = [{ name: "A" }, { name: "B" }];
-    var edges = [{ source: "A", target: "B" }];
+    var radius = 5;
+    var nodes = []; // [{ id: 1 }, { id: 2 }, { id: 0 }, { id: 3 }, { id: 4 }, { id: 5 }];
+    var links = []; // [{ source: 0, target: 1 }];
 
-    var simulation = d3.forceSimulation()
-    .force("link", d3.forceLink().id(function(d) { return d.id; }))
-    .force("charge", d3.forceManyBody())
-    .force("center", d3.forceCenter(width / 2, height / 2));
+    function createNodes() {
+        // Create nodes from data
+        for (let node of analysis) {
+            nodes.push(node);
+        }
+        for (let node of dumps) {
+            nodes.push(node);
+        }
+        for (let node of processes) {
+            nodes.push(node);
+        }
+        for (let node of nodes) {
+            node['id'] = node['pk'];
+            delete node['pk'];
+        }
 
-    var node = svg.append("g")
-        .selectAll("circle")
-        .data(graph.nodes)
-        .enter()
-        .append("circle")
-        .attr("r", 5)
+        // Set nodes static attributes
+
+    }
+
+    function createLinks() {
+        //Create links from data
+        for (let i = 0; i < dumps.length; i++) {
+            for (let j = 0; j < analysis.length; j++) {
+                if (analysis[j].id === dumps[i].fields.analysis) {
+                    links.push({ source: nodes.indexOf(analysis[j]), target: nodes.indexOf(dumps[i]) });
+                }
+            }
+        }
+        for (let i = 0; i < processes.length; i++) {
+            for (let j = 0; j < dumps.length; j++) {
+                if (dumps[j].id === processes[j].fields.dump) {
+                    links.push({ source: nodes.indexOf(dumps[j]), target: nodes.indexOf(processes[i]) });
+                }
+            }
+        }
+
+        //Set links static attributes
+
+
+    }
+
+    function updateLinks() {
+        var u = d3.select('.links')
+            .selectAll('line')
+            .data(links)
+            .join('line')
+            .attr('x1', function (d) {
+                return d.source.x
+            })
+            .attr('y1', function (d) {
+                return d.source.y
+            })
+            .attr('x2', function (d) {
+                return d.target.x
+            })
+            .attr('y2', function (d) {
+                return d.target.y
+            })
+            .attr('stroke', "black");
+    }
+
+    function updateNodes() {
+        var u = d3.select('.nodes')
+            .selectAll('image')
+            .data(nodes)
+            .join('image')
+            .attr('x', function (d) {
+                return d.x
+            })
+            .attr('y', function (d) {
+                return d.y
+            })
+            .attr('height', 20)
+            .attr('width', 20)
+            .attr('href', function (d) {
+                let modelSplit = d.model.split(".");
+                let path = imgPath + modelSplit[1] + ".svg";
+                return path;
+            })
+            .call(drag(simulation));
+    }
+
+    function ticked() {
+        updateLinks();
+        updateNodes();
+    }
+
+    // Drag on nodes function
+
+    function drag(simulation) {
+        function dragstarted(event) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            event.subject.fx = event.subject.x;
+            event.subject.fy = event.subject.y;
+        }
+
+        function dragged(event) {
+            event.subject.fx = event.x;
+            event.subject.fy = event.y;
+        }
+
+        function dragended(event) {
+            if (!event.active) simulation.alphaTarget(0);
+            event.subject.fx = null;
+            event.subject.fy = null;
+        }
+
+        return d3.drag()
+            .on("start", dragstarted)
+            .on("drag", dragged)
+            .on("end", dragended);
+    }
+
+    // Activate Zoom
+
+    function handleZoom(e) {
+        d3.selectAll('#graph g')
+            .attr('transform', e.transform);
+    }
+
+    svg.call(d3.zoom().on('zoom', handleZoom));
+
+    createNodes();
+    createLinks();
+
+    var simulation = d3.forceSimulation(nodes)
+        .force('charge', d3.forceManyBody())
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        .force("collide", d3.forceCollide().radius(function (d) {
+            return d.radius
+        }))
+        .force('link', d3.forceLink().links(links).distance(200))
+        .on('tick', ticked);
 
     $(document).ready(function () {
         $('.container').show();
         $('.container-fluid').show();
         $('.spinner-main').hide();
-
+        $('.main').show();
+        $('.svg').show();
     });
 </script>
 {% endblock content %}

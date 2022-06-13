@@ -2,6 +2,8 @@ from celery import uuid
 from django.db import models
 import uuid
 
+from investigations.models import PsScan
+
 CHOICES = (
     ('Windows', 'Windows'),
 )
@@ -24,22 +26,22 @@ class Analysis(Node):
 class Command(Node):
     args = models.CharField(max_length=255, default="")
 
-
-class Process(Node):
-    pid = models.IntegerField(null=True)
-    ppid = models.IntegerField(null=True)
-    session_id = models.IntegerField(null=True)
-    wow64 = models.BooleanField()
-    create_time = models.DateField()
-    exit_time = models.DateField()
-    is_malicious = models.BooleanField(default=False)
-    threat = models.CharField(max_length=500, default="")
-
 class Dump(Node):
     analysis = models.ForeignKey(Analysis, on_delete=models.CASCADE)
     md5 = models.CharField(max_length = 32,null = True)
     sha1 = models.CharField(max_length = 40,null = True)
     sha256 = models.CharField(max_length = 64,null = True)
+class Process(Node):
+    dump = models.ForeignKey(Dump, on_delete=models.CASCADE)
+    # pid = models.IntegerField(null=True)
+    # ppid = models.IntegerField(null=True)
+    # session_id = models.IntegerField(null=True)
+    # wow64 = models.BooleanField()
+    # create_time = models.DateField()
+    # exit_time = models.DateField()
+    ps_scan = models.ForeignKey(PsScan, on_delete=models.CASCADE)
+    is_malicious = models.BooleanField(default=False)
+    threat = models.CharField(max_length=500, default="")
 
 class Connection(Node):
     foreign_addr = models.CharField(max_length=255, default="")
