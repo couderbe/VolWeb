@@ -14,12 +14,12 @@
         <fieldset>
             <legend>Filters</legend>
             <div>
-                <input type="checkbox" id="suspicious" name="suspicious">
+                <input class="filter-checkbox" type="checkbox" id="suspicious" name="suspicious">
                 <label for="suspicious">Suspicious</label>
             </div>
 
             <div>
-                <input type="checkbox" id="commands" name="commands" checked>
+                <input class="filter-checkbox" type="checkbox" id="commands" name="commands" checked>
                 <label for="commands">Commands</label>
             </div>
         </fieldset>
@@ -49,22 +49,21 @@
     const imgPath = "{% static '/images/analyser/' %}";
 
     var svg = d3.select("#graph");
-    var radius = 5;
-    var nodes = [];
-    var links = [];
+    var nodesStore = [];
+    var linksStore = [];
 
     function createNodes() {
         // Create nodes from data
         for (let node of analysis) {
-            nodes.push(node);
+            nodesStore.push(node);
         }
         for (let node of dumps) {
-            nodes.push(node);
+            nodesStore.push(node);
         }
         for (let node of processes) {
-            nodes.push(node);
+            nodesStore.push(node);
         }
-        for (let node of nodes) {
+        for (let node of nodesStore) {
             node['id'] = node['pk'];
             delete node['pk'];
         }
@@ -72,7 +71,7 @@
         // Set nodes static attributes
         var u = d3.select('.nodes')
             .selectAll('image')
-            .data(nodes)
+            .data(nodesStore.filter(node => !node.filtered), function (d) { return d.id; })
             .join('image')
             .attr('height', 20)
             .attr('width', 20)
@@ -89,15 +88,26 @@
         for (let i = 0; i < dumps.length; i++) {
             for (let j = 0; j < analysis.length; j++) {
                 if (analysis[j].id === dumps[i].fields.analysis) {
-                    links.push({ source: nodes.indexOf(analysis[j]), target: nodes.indexOf(dumps[i]) });
+                    linksStore.push({ source: analysis[j].id, target: dumps[i].id })
                 }
             }
         }
         for (let i = 0; i < processes.length; i++) {
             for (let j = 0; j < dumps.length; j++) {
-                if (dumps[j].id === processes[j].fields.dump) {
-                    links.push({ source: nodes.indexOf(dumps[j]), target: nodes.indexOf(processes[i]) });
+                if (dumps[j].id === processes[i].fields.dump) {
+                    linksStore.push({ source: dumps[j].id, target: processes[i].id })
                 }
+            }
+        }
+
+        for (let link of linksStore) {
+            let sourceNode = nodesStore.find(elem => elem['id'] === link.source);
+            let targetNode = nodesStore.find(elem => elem['id'] === link.target);
+            if (sourceNode.filtered || targetNode.filtered) {
+                link['filtered'] = true;
+            }
+            else {
+                link['filtered'] = false;
             }
         }
 
@@ -109,7 +119,7 @@
     function updateLinks() {
         var u = d3.select('.links')
             .selectAll('line')
-            .data(links)
+            .data(linksStore.filter(link => !link.filtered), function (d) { return d.id; })
             .join('line')
             .attr('x1', function (d) {
                 return d.source.x
@@ -130,7 +140,7 @@
     function updateNodes() {
         var u = d3.select('.nodes')
             .selectAll('image')
-            .data(nodes)
+            .data(nodesStore.filter(node => !node.filtered), function (d) { return d.id; })
             .join('image')
             .attr('x', function (d) {
                 return d.x
@@ -138,8 +148,8 @@
             .attr('y', function (d) {
                 return d.y
             })
-            .call(drag(simulation))
-            .on("click", onNodeClicked);
+            .call(drag(simulation));
+
     }
 
     function ticked() {
@@ -220,14 +230,70 @@
     createNodes();
     createLinks();
 
-    var simulation = d3.forceSimulation(nodes)
+    var simulation = d3.forceSimulation(nodesStore)
         .force('charge', d3.forceManyBody())
         .force('center', d3.forceCenter(window.innerWidth / 2, window.innerHeight / 2))
         .force("collide", d3.forceCollide().radius(function (d) {
             return d.radius
         }))
-        .force('link', d3.forceLink().links(links).distance(200))
+        .force('link', d3.forceLink().links(linksStore).distance(200).id(function (d) { return d.id; }))
         .on('tick', ticked);
+
+    function filter() {
+
+        for (let node of nodesStore) {
+        }
+        for (let link of linksStore) {
+        }
+
+        var u = d3.select('.nodes')
+            .selectAll('image')
+            .data(nodesStore.filter(node => !node.filtered), function (d) { return d.id; });
+        u.exit().remove();
+        u.enter().append('image')
+            .attr('height', 20)
+            .attr('width', 20)
+            .attr('href', function (d) {
+                let modelSplit = d.model.split(".");
+                let path = imgPath + modelSplit[1] + ".svg";
+                return path;
+            })
+            .attr('x', function (d) {
+                return d.x
+            })
+            .attr('y', function (d) {
+                return d.y
+            })
+            .call(drag(simulation))
+            .on("click", onNodeClicked);
+
+        var u = d3.select('.links')
+            .selectAll('line')
+            .data(linksStore.filter(link => !link.filtered), function (d) { return d.id; });
+
+        u.exit().remove();
+        u.enter().append('line')
+            .attr('x1', function (d) {
+                return d.source.x
+            })
+            .attr('y1', function (d) {
+                return d.source.y
+            })
+            .attr('x2', function (d) {
+                return d.target.x
+            })
+            .attr('y2', function (d) {
+                return d.target.y
+            })
+            .attr('stroke', "black")
+            .attr('stroke-opacity', 0.4);
+    }
+
+    for (checkbox of document.getElementsByClassName("filter-checkbox")) {
+        checkbox.addEventListener('change', function (event) {
+            filter();
+        })
+    }
 
     $(document).ready(function () {
         $('.container').show();
