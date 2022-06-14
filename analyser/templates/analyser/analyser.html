@@ -3,12 +3,36 @@
 {% block content%}
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
+<link rel="stylesheet" href="{% static '/css/analyser.css' %}">
 
 <div id="main">
-    <svg id="graph" width="960" height="500">
+    <svg id="graph" preserveAspectRatio="xMinYMin meet">
         <g class="links"></g>
         <g class="nodes"></g>
     </svg>
+    <div id="filter">
+        <fieldset>
+            <legend>Filters</legend>
+            <div>
+                <input type="checkbox" id="suspicious" name="suspicious">
+                <label for="suspicious">Suspicious</label>
+            </div>
+
+            <div>
+                <input type="checkbox" id="commands" name="commands" checked>
+                <label for="commands">Commands</label>
+            </div>
+        </fieldset>
+    </div>
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-head">
+            <img id="sidebar-icon" src="" alt="Icon" class="image" width="50">
+            <label id="name"></label>
+            <a href="javascript:void(0)" class="closebtn" onclick="closeSidebar()">&times;</a>
+        </div>
+        <table id="sidebar-table">
+        </table>
+    </div>
 </div>
 
 
@@ -25,11 +49,9 @@
     const imgPath = "{% static '/images/analyser/' %}";
 
     var svg = d3.select("#graph");
-    var width = svg.attr("width");
-    var height = svg.attr("height");
     var radius = 5;
-    var nodes = []; // [{ id: 1 }, { id: 2 }, { id: 0 }, { id: 3 }, { id: 4 }, { id: 5 }];
-    var links = []; // [{ source: 0, target: 1 }];
+    var nodes = [];
+    var links = [];
 
     function createNodes() {
         // Create nodes from data
@@ -48,7 +70,18 @@
         }
 
         // Set nodes static attributes
-
+        var u = d3.select('.nodes')
+            .selectAll('image')
+            .data(nodes)
+            .join('image')
+            .attr('height', 20)
+            .attr('width', 20)
+            .attr('href', function (d) {
+                let modelSplit = d.model.split(".");
+                let path = imgPath + modelSplit[1] + ".svg";
+                return path;
+            })
+            .call(drag(simulation));
     }
 
     function createLinks() {
@@ -90,7 +123,8 @@
             .attr('y2', function (d) {
                 return d.target.y
             })
-            .attr('stroke', "black");
+            .attr('stroke', "black")
+            .attr('stroke-opacity', 0.4);
     }
 
     function updateNodes() {
@@ -104,19 +138,38 @@
             .attr('y', function (d) {
                 return d.y
             })
-            .attr('height', 20)
-            .attr('width', 20)
-            .attr('href', function (d) {
-                let modelSplit = d.model.split(".");
-                let path = imgPath + modelSplit[1] + ".svg";
-                return path;
-            })
-            .call(drag(simulation));
+            .call(drag(simulation))
+            .on("click", onNodeClicked);
     }
 
     function ticked() {
         updateLinks();
         updateNodes();
+    }
+
+    function setSidebar(data) {
+        document.getElementById("sidebar-icon").setAttribute("src", imgPath + data.model.split(".")[1] + ".svg");
+        document.getElementById("name").innerHTML = data.id;
+        let table = document.getElementById("sidebar-table");
+        table.replaceChildren();
+        for (let [key, value] of Object.entries(data.fields)) {
+            let row = table.insertRow();
+            let th = document.createElement("td");
+            th.classList.add("key");
+            let text = document.createTextNode(key);
+            th.appendChild(text);
+            row.appendChild(th);
+            th = document.createElement("td");
+            th.classList.add("value");
+            text = document.createTextNode(value);
+            th.appendChild(text);
+            row.appendChild(th);
+        }
+    }
+
+    function onNodeClicked(d) {
+        setSidebar(d.target.__data__);
+        openSidebar();
     }
 
     // Drag on nodes function
@@ -145,6 +198,16 @@
             .on("end", dragended);
     }
 
+    function openSidebar() {
+        document.getElementById("sidebar").style.width = "20em";
+        document.getElementById("main").style.marginRight = "20em";
+    }
+
+    function closeSidebar() {
+        document.getElementById("sidebar").style.width = "0";
+        document.getElementById("main").style.marginRight = "0";
+    }
+
     // Activate Zoom
 
     function handleZoom(e) {
@@ -159,7 +222,7 @@
 
     var simulation = d3.forceSimulation(nodes)
         .force('charge', d3.forceManyBody())
-        .force('center', d3.forceCenter(width / 2, height / 2))
+        .force('center', d3.forceCenter(window.innerWidth / 2, window.innerHeight / 2))
         .force("collide", d3.forceCollide().radius(function (d) {
             return d.radius
         }))
