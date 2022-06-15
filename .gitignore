@@ -1,13 +1,7 @@
-
 docker/nginx/log/
 *.pem
-
-
 db.sqlite3
-
 investigations/.DS_Store
-
 .DS_Store
 
-__pycache__/
-env/
+*.json

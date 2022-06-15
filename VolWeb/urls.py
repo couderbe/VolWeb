@@ -26,4 +26,5 @@ urlpatterns = [
     path('investigations/', include('investigations.urls')),
     path('iocs/', include('iocs.urls')),
     path('analyser/',include('analyser.urls')),
+    path('symbols/', include('symbols.urls')),
 ]

@@ -1,3 +1,10 @@
+/*
+The FileUpload Javascript function:
+  - Manage the form errors
+  - Upload file chunk by chunk
+/!\ This function needs a rework along with the linked investigations views /!\
+*/
+
 class FileUpload {
 
     constructor(input) {
@@ -159,7 +166,6 @@ class FileUpload {
     $('#submit').on('click', (event) => {
         event.preventDefault();
         var uploader = new FileUpload(document.querySelector('#fileupload'))
-        console.log(document.querySelector('#fileupload'));
         uploader.upload();
     });
 })(jQuery);
