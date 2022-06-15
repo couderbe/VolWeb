@@ -1,4 +1,5 @@
-from analyser.models import Analysis, Dump, Process
+from concurrent.futures import process
+from analyser.models import Analysis, Command, Connection, Dump, File, Process
 from .models import *
 from iocs.models import IOC
 from .celery import app
@@ -70,12 +71,47 @@ def windows_memory_analysis(dump_path,case):
     analysis.children = json.dumps({'children': [str(dump.id)]})
     analysis.save()
     psscan = PsScan.objects.filter(investigation_id = id)
-    print(psscan)
     for ps in psscan:
-        print(ps)
-        # Process(dump=dump,pid=ps.PID,ppid=ps.PPID,session_id=ps.SessionId,wow64=ps.Wow64,create_time=ps.CreateTime,exit_time=ps.ExitTime).save()
         proc = Process(dump=dump,ps_scan=ps,investigation_id=id)
         proc.save()
+    commands = CmdLine.objects.filter(investigation_id  = id)
+    for command in commands:
+        proc = Process.objects.filter(investigation_id = id, ps_scan__PID = command.PID,ps_scan__ImageFileName=command.Process)
+        if len(proc) > 1:
+            print(command.Process)
+            print(len(proc))
+            for p in proc:
+                try:
+                    print(p.ps_scan.ImageFileName)
+                except Exception as e:
+                    print(e)
+        if len(proc) == 0:
+            print("No proc found")
+        cmd = Command(process=proc[0],cmdline=command,investigation_id=id)
+        cmd.save()
+    files = FileScan.objects.filter(investigation_id = id)
+    for file in files:
+        f = File(file=file,investigation_id = id)
+        f.save()
+    connections = NetScan.objects.filter(investigation_id=id)
+    for connection in connections:
+        proc = Process.objects.filter(investigation_id = id, ps_scan__PID = connection.PID)
+        if len(proc) == 0:
+            print(connection.PID)
+            print(connection.Owner)
+            print(connection.Proto)
+            # con = Connection(netscan=connection,investigation_id=id)
+            # con.save()
+        elif len(proc) == 1:
+            con = Connection(netscan=connection,process=proc[0],investigation_id=id)
+            con.save()
+        else:
+            print("More than 1")
+            print(connection)
+            print(len(proc))
+            for p in proc:
+                print(p)
+        
     return
 
 """Linux Memory Analysis (Not implemented yet)"""

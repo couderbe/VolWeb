@@ -41,9 +41,9 @@ def analyser(request):
                 'Analysis':serializers.serialize("json",Analysis.objects.filter(investigation_id = id)),
                 'Dump':serializers.serialize("json",Dump.objects.filter(investigation_id = id)),
                 'Process' : serializers.serialize("json",Process.objects.filter(investigation_id = id)),
-                # 'Command': Command.objects.filter(investigation_id = id),
-                # 'Connection': Connection.objects.get(investigation_id = id),
-                # 'File': File.objects.filter(investigation_id = id),
+                'Command': serializers.serialize("json",Command.objects.filter(investigation_id = id)),
+                'Connection': serializers.serialize("json",Connection.objects.filter(investigation_id = id)),
+                'File': serializers.serialize("json",File.objects.filter(investigation_id = id)),
             }
             
             context.update(models)

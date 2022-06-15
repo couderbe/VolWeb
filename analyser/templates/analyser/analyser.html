@@ -42,10 +42,9 @@
     var analysis = JSON.parse("{{Analysis|escapejs}}");
     var dumps = JSON.parse("{{Dump|escapejs}}");
     var processes = JSON.parse("{{Process|escapejs}}");
-    // var commands = JSON.parse("{{Command|escapejs}}");
-    // var connections = JSON.parse("{{Connection|escapejs}}");
-    // var files = JSON.parse("{{File|escapejs}}");
-    // const hiddenFields = ["isHidden", "isCollapsed", "children"];
+    var commands = JSON.parse("{{Command|escapejs}}");
+    var connections = JSON.parse("{{Connection|escapejs}}");
+    var files = JSON.parse("{{File|escapejs}}");
     const imgPath = "{% static '/images/analyser/' %}";
 
     var svg = d3.select("#graph");
@@ -63,6 +62,15 @@
         for (let node of processes) {
             nodesStore.push(node);
         }
+        for (let node of commands){
+            nodesStore.push(node);
+        }
+        for (let node of connections){
+            nodesStore.push(node);
+        }
+        // for (let node of files){
+        //     nodesStore.push(node);
+        // }
         for (let node of nodesStore) {
             node['id'] = node['pk'];
             delete node['pk'];
@@ -80,7 +88,8 @@
                 let path = imgPath + modelSplit[1] + ".svg";
                 return path;
             })
-            .call(drag(simulation));
+            .call(drag(simulation))
+            .on("click", onNodeClicked);
     }
 
     function createLinks() {
@@ -96,6 +105,21 @@
             for (let j = 0; j < dumps.length; j++) {
                 if (dumps[j].id === processes[i].fields.dump) {
                     linksStore.push({ source: dumps[j].id, target: processes[i].id })
+                }
+            }
+        }
+        for (let command of commands){
+            for (let proc of processes){
+                if(proc.id === command.fields.process){
+                    linksStore.push({ source: proc.id, target: command.id});
+                }
+            }
+        }
+
+        for (let connection of connections){
+            for (let proc of processes){
+                if(proc.id === connection.fields.process){
+                    linksStore.push({ source: proc.id, target: connection.id});
                 }
             }
         }
