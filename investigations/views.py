@@ -264,6 +264,7 @@ def reviewinvest(request):
                     'files': windows_engine.FileDump.objects.filter(case_id = id),
                     'ImageSignature' : ImageSignature.objects.get(investigation_id = id),
                     'PsScan': windows_engine.PsScan.objects.filter(investigation_id = id),
+                    'PsList': windows_engine.PsList.objects.filter(investigation_id = id),
                     'PsTree': windows_engine.PsTree.objects.get(investigation_id = id),
                     'CmdLine': windows_engine.CmdLine.objects.filter(investigation_id = id),
                     'Privs': windows_engine.Privs.objects.filter(investigation_id = id),

@@ -266,7 +266,10 @@ $(document).ready(function(){
     $('.plugin').hide();
     $('.PsScan').show();
   });
-
+  $("#PsListLink").on("click", function(){
+    $('.plugin').hide();
+    $('.PsList').show();
+  });
   $("#PrivsLink").on("click", function(){
     $('.plugin').hide();
     $('.Privs').show();

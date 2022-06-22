@@ -1,0 +1,39 @@
+<div class="mt-5 PsList plugin">
+    <h6 class="h6">Process List</h6>
+    <div class="d-inline">
+      <input class="form-control mb-3" id="searchProcessList" type="text" placeholder="Search..">
+    </div>
+    <table id="processListTable" class="table table-light  card-font proceslist">
+      <thead>
+        <tr>
+          <th scope="col">PID</th>
+          <th scope="col">PPID</th>
+          <th scope="col">ImageFileName</th>
+          <th scope="col">Offset(V)</th>
+          <th scope="col">Threads</th>
+          <th scope="col">Handles</th>
+          <th scope="col">SessionId</th>
+          <th scope="col">Wow64</th>
+          <th scope="col">CreateTime</th>
+          <th scope="col">ExitTime</th>
+        </tr>
+      </thead>
+      <tbody id="processList">
+        {% for process in PsList %}
+        <tr>
+          <td>{{process.PID}}</td>
+          <td>{{process.PPID}}</td>
+          <td>{{process.ImageFileName}}</td>
+          <td>{{process.Offset}}</td>
+          <td>{{process.Threads}}</td>
+          <td>{{process.Handles}}</td>
+          <td>{{process.SessionId}}</td>
+          <td>{{process.Wow64}}</td>
+          <td>{{process.CreateTime}}</td>
+          <td>{{process.ExitTime}}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  

@@ -146,6 +146,7 @@ def run_volweb_routine_windows(dump_path, case_id, case):
     volweb_knowledge_base = {
     #Process
         'PsScan' : {'plugin' : plugin_list['windows.psscan.PsScan']},
+        'PsList' : {'plugin' : plugin_list['windows.pslist.PsList']},
         'PsTree' : {'plugin' : plugin_list['windows.pstree.PsTree']},
         'CmdLine' : {'plugin' : plugin_list['windows.cmdline.CmdLine']},
         'Privs' : {'plugin': plugin_list['windows.privileges.Privs']},

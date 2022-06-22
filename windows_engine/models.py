@@ -67,6 +67,24 @@ class PsScan(models.Model):
     ExitTime = models.CharField(max_length = 255,null = True)
     Fileoutput = models.CharField(max_length = 255,null = True)
 
+class PsList(models.Model):
+    investigation = models.ForeignKey(
+            UploadInvestigation,
+            on_delete=models.CASCADE,
+            related_name="windows_pslist_investigation"
+        )
+    PID = models.BigIntegerField(null = True)
+    PPID = models.BigIntegerField(null = True)
+    ImageFileName = models.CharField(max_length = 255,null = True)
+    Offset = models.BigIntegerField(null = True)
+    Threads = models.BigIntegerField(null = True)
+    Handles = models.BigIntegerField(null = True)
+    SessionId = models.BigIntegerField(null = True)
+    Wow64 = models.BooleanField()
+    CreateTime = models.CharField(max_length = 255,null = True)
+    ExitTime = models.CharField(max_length = 255,null = True)
+    Fileoutput = models.CharField(max_length = 255,null = True)
+
 class CmdLine(models.Model):
     investigation = models.ForeignKey(
             UploadInvestigation,
