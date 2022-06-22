@@ -1,6 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from analyser.rules import parse_rule
+from analyser.rules import run_rules
 
 
 @login_required
@@ -12,4 +12,4 @@ def analyser(request):
 @login_required
 def detection(request):
     if request.method == 'GET':
-        return JsonResponse({'Result': parse_rule("analyser/rules/test_rule.yml")}, status=200)
+        return JsonResponse({'Result': run_rules()}, status=200)
