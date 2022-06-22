@@ -38,15 +38,16 @@ def parse_rule(path: str) -> tuple:
 
     return(data['title'], result)
 
+
 @condition
 def intersect(params) -> list:
     if isinstance(params[0], dict) and isinstance(params[1], dict):
-        print(module_to_list(params[0]["module"]))
-        # set1 = set(module_to_list(params[0]["module"]))
-        # set2 = set(module_to_list(params[1]["module"]))
-        # print(set1)
-        # print(set2)
-        # return set1.intersection(set2)
+        print(params[2]["not"])
+        print(type(params[2]["not"]))
+        if params[2]["not"]:
+            return [x for x in module_to_list(params[0]["module"]) if {'PID': x['PID'], 'ImageFileName':x['ImageFileName']} not in [{'PID': y['PID'], 'ImageFileName':y['ImageFileName']} for y in module_to_list(params[1]["module"])]]
+        else:
+            return [x for x in module_to_list(params[0]["module"]) if {'PID': x['PID'], 'ImageFileName':x['ImageFileName']} in [{'PID': y['PID'], 'ImageFileName':y['ImageFileName']} for y in module_to_list(params[1]["module"])]]
     else:
         return "Intersect not supported operand types"
 
@@ -64,4 +65,4 @@ def equals(params) -> list:
 
 
 def module_to_list(module: str):
-    return list(eval(module).objects.filter(investigation_id=1).values())
+    return list(eval(module).objects.filter(investigation_id=2).values())

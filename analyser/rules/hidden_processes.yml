@@ -1,5 +1,6 @@
-title: Hidden processes
+title: Potential hidden processes
 condition:
     intersect:
         - module: PsScan
         - module: PsList
+        - not: True
