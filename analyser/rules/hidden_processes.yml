@@ -3,4 +3,7 @@ condition:
     intersect:
         - module: PsScan
         - module: PsList
+        - attributes:
+            - PID
+            - ImageFileName
         - not: True

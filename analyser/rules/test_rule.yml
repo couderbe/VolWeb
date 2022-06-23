@@ -1,6 +1,6 @@
 title: This is a test rule
 condition:
     equals:
-        - module: NetScan
+        - module: NetStat
           attribute: Owner
         - iexplore.exe

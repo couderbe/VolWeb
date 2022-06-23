@@ -42,12 +42,13 @@ def parse_rule(path: str) -> tuple:
 @condition
 def intersect(params) -> list:
     if isinstance(params[0], dict) and isinstance(params[1], dict):
-        print(params[2]["not"])
-        print(type(params[2]["not"]))
-        if params[2]["not"]:
-            return [x for x in module_to_list(params[0]["module"]) if {'PID': x['PID'], 'ImageFileName':x['ImageFileName']} not in [{'PID': y['PID'], 'ImageFileName':y['ImageFileName']} for y in module_to_list(params[1]["module"])]]
+        print(params[2]['attributes'])
+        if params[3]["not"]:
+            return [x for x in module_to_list(params[0]["module"]) if {key: x[key] for key in params[2]['attributes']}
+                not in [{key: y[key] for key in params[2]['attributes']} for y in module_to_list(params[1]["module"])]]
         else:
-            return [x for x in module_to_list(params[0]["module"]) if {'PID': x['PID'], 'ImageFileName':x['ImageFileName']} in [{'PID': y['PID'], 'ImageFileName':y['ImageFileName']} for y in module_to_list(params[1]["module"])]]
+            return [x for x in module_to_list(params[0]["module"]) if {key: x[key] for key in params[2]['attributes']}
+                in [{key: y[key] for key in params[2]['attributes']} for y in module_to_list(params[1]["module"])]]
     else:
         return "Intersect not supported operand types"
 

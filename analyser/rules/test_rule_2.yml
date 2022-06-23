@@ -1,6 +1,6 @@
 title: This is a second test rule
 condition:
     equals:
-        - module: NetScan
+        - module: NetStat
           attribute: Owner
         - csrss.exe
