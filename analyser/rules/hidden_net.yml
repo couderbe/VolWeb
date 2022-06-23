@@ -4,6 +4,6 @@ condition:
         - module: NetScan
         - module: NetStat
         - attributes:
-            - PID
-            - Owner
+            PID : PID
+            Owner : Owner
         - not: True

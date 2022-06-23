@@ -3,6 +3,7 @@ from typing import Any, Callable
 import yaml
 from yaml.loader import SafeLoader
 from windows_engine.models import *
+from analyser.models import *
 
 CONDITIONS = {}
 
@@ -28,7 +29,6 @@ def parse_rule(path: str) -> tuple:
         data = yaml.load(f, Loader=SafeLoader)
     print(data)
     condition = data['condition']
-    print(CONDITIONS)
     for cond in CONDITIONS:
         if cond in condition:
             if len((result := CONDITIONS[cond](condition[cond]))) > 0:
@@ -42,13 +42,29 @@ def parse_rule(path: str) -> tuple:
 @condition
 def intersect(params) -> list:
     if isinstance(params[0], dict) and isinstance(params[1], dict):
-        print(params[2]['attributes'])
-        if params[3]["not"]:
-            return [x for x in module_to_list(params[0]["module"]) if {key: x[key] for key in params[2]['attributes']}
-                not in [{key: y[key] for key in params[2]['attributes']} for y in module_to_list(params[1]["module"])]]
+        lists = []
+        comparaison_attributes = {}
+        not_in = False
+        for param in params:
+            if "module" in param:
+                lists.append(module_to_list(param["module"]))
+            elif "condition" in param:
+                condition = param["condition"]
+                for cond in CONDITIONS:
+                    if cond in condition:
+                        lists.append(CONDITIONS[cond](condition[cond]))
+            elif "attributes" in param:
+                comparaison_attributes = param["attributes"]
+            elif "not" in param:
+                not_in = param["not"]
+            if len(lists) > 2:
+                    return "Intersect support only two operands"
+        if not_in:
+            return [x for x in lists[0] if [x[key] for (key, value) in comparaison_attributes.items()]
+                    not in [[y[value] for (key, value) in comparaison_attributes.items()] for y in lists[1]]]
         else:
-            return [x for x in module_to_list(params[0]["module"]) if {key: x[key] for key in params[2]['attributes']}
-                in [{key: y[key] for key in params[2]['attributes']} for y in module_to_list(params[1]["module"])]]
+            return [x for x in lists[0] if [x[key] for (key, value) in comparaison_attributes.items()]
+                    in [[y[value] for (key, value) in comparaison_attributes.items()] for y in lists[1]]]
     else:
         return "Intersect not supported operand types"
 
@@ -66,4 +82,4 @@ def equals(params) -> list:
 
 
 def module_to_list(module: str):
-    return list(eval(module).objects.filter(investigation_id=2).values())
+    return list(eval(module).objects.filter(investigation_id=1).values())

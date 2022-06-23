@@ -8,7 +8,7 @@ def analyser(request):
     if request.method == 'GET':
         return JsonResponse({'Unimplemented': 'Unimplemented'}, status=200)
 
-
+#TODO use investigation id
 @login_required
 def detection(request):
     if request.method == 'GET':

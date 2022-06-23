@@ -4,6 +4,6 @@ condition:
         - module: PsScan
         - module: PsList
         - attributes:
-            - PID
-            - ImageFileName
+            PID : PID
+            ImageFileName : ImageFileName
         - not: True
