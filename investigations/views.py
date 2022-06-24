@@ -1,3 +1,4 @@
+from analyser.rules import run_rules
 from .tasks import start_memory_analysis, dump_memory_pid, app, dump_memory_file
 from django.http import StreamingHttpResponse, FileResponse, JsonResponse
 from django.contrib.auth.decorators import login_required
@@ -282,6 +283,7 @@ def reviewinvest(request):
                     'Malfind' : windows_engine.Malfind.objects.filter(investigation_id = id),
                     'FileScan' : windows_engine.FileScan.objects.filter(investigation_id = id),
                     'Strings' : windows_engine.Strings.objects.filter(investigation_id = id),
+                    'Detection': run_rules(id),
                 }
                 context.update(forms)
                 context.update(models)

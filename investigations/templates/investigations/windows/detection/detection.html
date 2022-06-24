@@ -1,0 +1,26 @@
+{% for rule in Detection %}
+<div class="mt-5 {{rule.Title|cut:' '  }} plugin">
+    <h6 class="h6">{{rule.Title}}</h6>
+    <div class="d-inline">
+        <input class="form-control mb-3" id="search{{rule.Title|cut:' '  }}" type="text" placeholder="Search..">
+    </div>
+    <table id="{{rule.Title|cut:' '  }}Table" class="table table-light  card-font {{rule.Title|cut:' '  }}">
+        <thead>
+            <tr>
+                {% for key,value in rule.Result.0.items %}
+                <th scope="col">{{key}}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody id="{{rule.Title|cut:' '  }}">
+            {% for elem in rule.Result %}
+            <tr>
+                {% for key,value in elem.items %}
+                <td>{{value}}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endfor %}

@@ -62,6 +62,16 @@
               <ul>
             </div>
 
+            <!-- Detection -->
+            <a href="#collapseDetection" class="bg-light list-group-item d-inline-block text-truncate" data-bs-toggle="collapse" data-bs-parent="#sidebar"><i class="text-dark bi bi-search"></i> <span class="text-dark">Detection</span> </a>
+            <div class="collapse show" id="collapseDetection">
+              <ul class="list-group-item bg-light">
+                {% for rule in Detection %}
+                <li class="bg-light list-group-horizontal-md text-truncate" data-bs-parent="#sidebar"><i class="text-dark bi bi bi-box"></i> <a id="{{ rule.Title|cut:' '  }}Link" href="#" class="text-dark">{{ rule.Title }}</a></li>
+                {% endfor %}
+              <ul>
+            </div>
+
         </div>
     </div>
 </div>

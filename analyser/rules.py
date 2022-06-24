@@ -19,7 +19,7 @@ def run_rules(invest_id: int, directory: str = "analyser/rules/") -> dict:
         for filename in files:
             path = os.path.join(root, filename)
             print(path)
-            output.append(parse_rule(invest_id,path))
+            output.append(parse_rule(invest_id, path))
     return output
 
 
@@ -31,12 +31,12 @@ def parse_rule(invest_id: int, path: str) -> tuple:
     condition = data['condition']
     for cond in CONDITIONS:
         if cond in condition:
-            if len((result := CONDITIONS[cond](invest_id,condition[cond]))) > 0:
+            if len((result := CONDITIONS[cond](invest_id, condition[cond]))) > 0:
                 pass
             else:
                 result = "Nothing found"
 
-    return(data['title'], result)
+    return({"Title": data['title'], "Result": result})
 
 
 @condition
@@ -47,12 +47,13 @@ def intersect(invest_id: int, params) -> list:
         not_in = False
         for param in params:
             if "module" in param:
-                lists.append(module_to_list(invest_id,param["module"]))
+                lists.append(module_to_list(invest_id, param["module"]))
             elif "condition" in param:
                 condition = param["condition"]
                 for cond in CONDITIONS:
                     if cond in condition:
-                        lists.append(CONDITIONS[cond](invest_id,condition[cond]))
+                        lists.append(CONDITIONS[cond](
+                            invest_id, condition[cond]))
             elif "attributes" in param:
                 comparaison_attributes = param["attributes"]
             elif "not" in param:
@@ -73,7 +74,7 @@ def intersect(invest_id: int, params) -> list:
 def equals(invest_id: int, params) -> list:
     if isinstance(params[0], dict) and isinstance(params[1], str):
         if "module" in params[0]:
-            records = module_to_list(invest_id,params[0]["module"])
+            records = module_to_list(invest_id, params[0]["module"])
             filtered_records = list(
                 filter(lambda record: record[params[0]["attribute"]] == params[1], records))
             return filtered_records
