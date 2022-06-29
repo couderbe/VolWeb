@@ -2,5 +2,6 @@ from django.urls import path
 from . import views
 urlpatterns = [
     path('', views.analyser, name='analyser'),
-    path('detection/', views.detection, name='detection'),
+    path('rules/', views.rules_management, name='rules'),
+    path('add_rule/', views.add_rule, name='add_rule'),
 ]
