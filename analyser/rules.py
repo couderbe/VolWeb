@@ -1,5 +1,6 @@
+from cgitb import enable
 import os
-from typing import Any, Callable
+from typing import Callable
 import yaml
 from yaml.loader import SafeLoader
 from windows_engine.models import *
@@ -13,13 +14,11 @@ def condition(func: Callable) -> Callable:
     return func
 
 
-def run_rules(invest_id: int, directory: str = "analyser/rules/") -> dict:
+def run_rules(invest_id: int) -> dict:
     output = []
-    for root, dirs, files in os.walk(directory):
-        for filename in files:
-            path = os.path.join(root, filename)
-            print(path)
-            output.append(parse_rule(invest_id, path))
+    rules = Rule.objects.filter(enabled=True)
+    for rule in rules:
+        output.append(parse_rule(invest_id, str(rule.file)))
     return output
 
 

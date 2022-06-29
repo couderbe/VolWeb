@@ -10,7 +10,6 @@ def import_rules(apps, schema_editor):
     for root, dirs, files in os.walk("analyser/rules/"):
         for filename in files:
             path = os.path.join(root, filename)
-            print(path)
             with  open(path, 'r') as f:
                 data = yaml.load(f, Loader=yaml.SafeLoader)
                 #TODO change os when adding linux
