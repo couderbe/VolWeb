@@ -1,6 +1,7 @@
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import FileResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.contrib import messages
 from analyser.rules import run_rules
 from investigations.forms import ManageInvestigation
 from analyser.forms import *
@@ -87,3 +88,32 @@ def toggle_rule(request):
             print("invalid")
             # TODO Show error on toast
             return redirect('/analyser/rules/')
+
+@login_required
+def download_rule(request):
+    """Download a rule
+
+        Arguments:
+        request : http request object
+
+        Comment:
+        The user requested to download a rule.
+        Get the file and return it.
+        """
+    if request.method == 'POST':
+        form = DownloadRuleForm(request.POST)
+        if form.is_valid():
+            id = form.cleaned_data['id']
+            rule = Rule.objects.get(pk = id)
+            file_path = rule.file.path
+            try:
+                response = FileResponse(open(file_path, 'rb'))
+                response['content_type'] = "application/octet-stream"
+                response['Content-Disposition'] = 'attachment; filename=' + os.path.basename(file_path)
+                return response
+            except:
+                messages.add_message(request,messages.ERROR,'Failed to fetch the requested file')
+
+        else:
+            return JsonResponse({'message': "error"})
+

@@ -18,3 +18,7 @@ class NewRuleForm(forms.ModelForm):
 class ManageRuleForm(forms.Form):
      rule_id = forms.CharField(max_length=100, widget=forms.TextInput(attrs={
         'class': 'd-none',}))
+
+class DownloadRuleForm(forms.Form):
+     id = forms.CharField(max_length=255, widget=forms.TextInput(attrs={
+        'class': 'd-none','value':'n/a'}))
