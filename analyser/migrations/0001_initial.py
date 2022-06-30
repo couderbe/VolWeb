@@ -45,7 +45,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(primary_key=True, serialize=False)),
                 ('title', models.TextField()),
                 ('enabled', models.BooleanField(default=True)),
-                ('file', models.FileField(upload_to='analyser/rules')),
+                ('file', models.FileField(upload_to='')),
                 ('os', models.CharField(choices=[('Windows', 'Windows')], max_length=50)),
             ],
         ),

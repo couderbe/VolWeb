@@ -28,6 +28,7 @@
                             <th>Title</th>
                             <th>Operating system</th>
                             <th>Enabled</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="rulesTable">
@@ -37,6 +38,12 @@
                             <td>{{r.title}}</td>
                             <td>{{r.os}}</td>
                             <td>{{r.enabled}}</td>
+                            <td>
+                                <a class="btn border border-light btn-sm" role="button"
+                                    onclick="Toggle({{r.id}})">Toggle</a>
+                                <a class="btn border border-light btn-danger btn-sm" role="button"
+                                    onclick="DeleteRule({{r.id}})">Delete</a>
+                            </td>
                         </tr>
                         {% endfor %}
                         {% endif %}
@@ -45,6 +52,7 @@
             </div>
         </div>
     </div>
+    {% csrf_token %}
 </div>
 
 <script>
@@ -60,6 +68,35 @@
             });
         });
     });
+
+
+    function DeleteRule(id) {
+        const csrf = document.getElementsByName('csrfmiddlewaretoken');
+        const fd = new FormData();
+        fd.append('csrfmiddlewaretoken', csrf[0].value);
+        fd.append('rule_id', id);
+        $.ajax({
+            type: 'POST',
+            url: "{% url 'delete_rule' %}",
+            enctype: 'multipart/form-data',
+            data: fd,
+            beforeSend: function () {
+            },
+            success: function (response) {
+                location.reload();
+            },
+            error: function (error) {
+
+            },
+            cache: false,
+            contentType: false,
+            processData: false
+        });
+    }
+
+    function Toggle(id) {
+        console.log("Toggle")
+    }
 
 </script>
 {% endblock content %}

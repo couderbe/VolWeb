@@ -4,6 +4,7 @@ from django.shortcuts import redirect, render
 from analyser.rules import run_rules
 from investigations.forms import ManageInvestigation
 from analyser.forms import *
+import os
 
 
 @login_required
@@ -15,9 +16,10 @@ def analyser(request):
             id = case.id
         return JsonResponse({'Detection': run_rules(id)}, status=200)
 
+
 @login_required
 def rules_management(request):
-    return render(request,'analyser/rules.html',{'rules':Rule.objects.all()})
+    return render(request, 'analyser/rules.html', {'rules': Rule.objects.all()})
 
 
 @login_required
@@ -27,5 +29,34 @@ def add_rule(request):
         if form.is_valid():
             form.save()
             return redirect('/analyser/rules/')
-    form = NewRuleForm(initial={"os":"Windows"})
-    return render(request, "analyser/add_rule.html", {'form':form})
+    form = NewRuleForm(initial={"os": "Windows"})
+    return render(request, "analyser/add_rule.html", {'form': form})
+
+
+@login_required
+def delete_rule(request):
+    """Delete a rule
+
+        Arguments:
+        request : http request object
+
+        Comments:
+        Delete the Rule selected by the user.
+        """
+    if request.method == "POST":
+        form = ManageRuleForm(request.POST)
+        if form.is_valid():
+            id = form.cleaned_data['rule_id']
+            rule = Rule.objects.get(pk=id)
+            # Delete rule file
+            if os.path.exists(rule.file.path):
+                os.remove(rule.file.path)
+            else:
+                print("The file does not exist")
+            # Delete rule from model
+            rule.delete()
+            return redirect('/analyser/rules/')
+        else:
+            print("invalid")
+            # TODO Show error on toast
+            return redirect('/analyser/rules/')

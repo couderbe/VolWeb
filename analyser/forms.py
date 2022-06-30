@@ -13,3 +13,8 @@ class NewRuleForm(forms.ModelForm):
              'file' : forms.FileInput(attrs={'class': 'form-control','required':'""'}),
              'os' : forms.Select(attrs={'class':'form-control','required':'""'}),
          }
+
+#This form is used when editing or deleting a Rule
+class ManageRuleForm(forms.Form):
+     rule_id = forms.CharField(max_length=100, widget=forms.TextInput(attrs={
+        'class': 'd-none',}))

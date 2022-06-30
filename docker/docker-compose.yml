@@ -29,6 +29,7 @@ services:
       - cases:/home/app/web/Cases/
       - staticfiles:/home/app/web/staticfiles
       - symbols:/home/app/web/symbols/uploads
+      - rules:/home/app/web/analyser/rules
 
   nginx:
     container_name: nginx
@@ -71,3 +72,4 @@ volumes:
   staticfiles:
   cases:
   symbols:
+  rules:
