@@ -5,4 +5,5 @@ urlpatterns = [
     path('rules/', views.rules_management, name='rules'),
     path('add_rule/', views.add_rule, name='add_rule'),
     path('delete_rule/', views.delete_rule, name='delete_rule'),
+    path('toggle_rule/', views.toggle_rule, name='toggle_rule'),
 ]

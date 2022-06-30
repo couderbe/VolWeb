@@ -95,7 +95,27 @@
     }
 
     function Toggle(id) {
-        console.log("Toggle")
+        const csrf = document.getElementsByName('csrfmiddlewaretoken');
+        const fd = new FormData();
+        fd.append('csrfmiddlewaretoken', csrf[0].value);
+        fd.append('rule_id', id);
+        $.ajax({
+            type: 'POST',
+            url: "{% url 'toggle_rule' %}",
+            enctype: 'multipart/form-data',
+            data: fd,
+            beforeSend: function () {
+            },
+            success: function (response) {
+                location.reload();
+            },
+            error: function (error) {
+
+            },
+            cache: false,
+            contentType: false,
+            processData: false
+        });
     }
 
 </script>

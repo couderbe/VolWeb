@@ -60,3 +60,30 @@ def delete_rule(request):
             print("invalid")
             # TODO Show error on toast
             return redirect('/analyser/rules/')
+
+@login_required
+def toggle_rule(request):
+    """Toggle a rule
+
+        Arguments:
+        request : http request object
+
+        Comments:
+        Toggle the Rule selected by the user.
+        """
+    if request.method == "POST":
+        form = ManageRuleForm(request.POST)
+        if form.is_valid():
+            id = form.cleaned_data['rule_id']
+            rule = Rule.objects.get(pk=id)
+            print(rule)
+            # Toggle rule from model
+            rule.enabled = not(rule.enabled)
+            print(rule.enabled)
+            rule.save()
+            # rule.update(enabled = not(rule.enabled))
+            return redirect('/analyser/rules/')
+        else:
+            print("invalid")
+            # TODO Show error on toast
+            return redirect('/analyser/rules/')
