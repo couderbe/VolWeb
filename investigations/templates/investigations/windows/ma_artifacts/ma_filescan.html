@@ -7,18 +7,59 @@
     <thead>
       <tr>
         <th scope="col">Offset</th>
-        <th scope="col" width ='75%'>File</th>
+        <th scope="col" width='75%'>File</th>
         <th scope="col">Size</th>
+        <th scope="col">Actions</th>
       </tr>
     </thead>
     <tbody id="FileScanTab">
       {% for files in FileScan %}
-        <tr>
-          <td>{{files.Offset }}</td>
-          <td style="word-wrap:break-word;">{{files.Name}}</td>
-          <td>{{files.Size}}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+      <tr>
+        <td>{{files.Offset}}</td>
+        <td style="word-wrap:break-word;">{{files.Name}}</td>
+        <td>{{files.Size}}</td>
+        <td>
+          <a class="btn border border-light btn-sm" role="button" onclick="event.stopPropagation(); Dump('{{files.Offset}}');">Dump</a>
+          <a class="btn border border-light btn-sm" role="button" onclick="event.stopPropagation(); Virustotal('{{files.pk}}');">Virustotal</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% csrf_token %}
+<script>
+  function Dump(offset) {
+    console.log(offset);
+  }
+
+  function Virustotal(pk) {
+    const csrf = document.getElementsByName('csrfmiddlewaretoken');
+    const fd = new FormData();
+    fd.append('csrfmiddlewaretoken', csrf[0].value);
+    fd.append('id', pk);
+    $.ajax({
+      type: 'POST',
+      url: "{% url 'virustotal' %}",
+      enctype: 'multipart/form-data',
+      data: fd,
+      beforeSend: function () {
+        $('#proc-message').html("Your Virustotal request was taken into account");
+        $('.toast-proc').toast('show');
+      },
+      success: function (response) {
+        console.log(response['message']);
+        $('#proc-message').html(response['message']);
+        $('.toast-proc-error').toast('show');
+      },
+      error: function (error) {
+        console.log(error);
+        $('#proc-error-message').html("Virustotal analysis error");
+        $('.toast-proc-error').toast('show');
+      },
+      cache: false,
+      contentType: false,
+      processData: false
+    });
+  }
+</script>

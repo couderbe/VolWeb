@@ -1,11 +1,17 @@
+from fileinput import filename
 from django.contrib.auth.decorators import login_required
 from django.http import FileResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.contrib import messages
+from analyser.models import VirustotalAnalysis
 from analyser.rules import run_rules
+from analyser.tasks import get_file_related_to_analysis, is_filescan_done, virustotal_filescan
 from investigations.forms import ManageInvestigation
 from analyser.forms import *
 import os
+from investigations.models import UploadInvestigation
+from investigations.tasks import dump_memory_file
+from windows_engine.models import FileDump, FileScan
 
 
 @login_required
@@ -62,6 +68,7 @@ def delete_rule(request):
             # TODO Show error on toast
             return redirect('/analyser/rules/')
 
+
 @login_required
 def toggle_rule(request):
     """Toggle a rule
@@ -77,17 +84,80 @@ def toggle_rule(request):
         if form.is_valid():
             id = form.cleaned_data['rule_id']
             rule = Rule.objects.get(pk=id)
-            print(rule)
             # Toggle rule from model
             rule.enabled = not(rule.enabled)
-            print(rule.enabled)
             rule.save()
-            # rule.update(enabled = not(rule.enabled))
             return redirect('/analyser/rules/')
         else:
             print("invalid")
             # TODO Show error on toast
             return redirect('/analyser/rules/')
+
+
+@login_required
+def virustotal(request):
+    """Virustotal analysis
+
+        Arguments:
+        request : http request object
+
+        Comments:
+        Start analysis with virustotal.
+        If the analysis is already running show status.
+        If the analysis is done show results
+        """
+    if request.method == "POST":
+        form = VirustotalForm(request.POST)
+        if form.is_valid():
+            id = form.cleaned_data['id']
+            file = FileScan.objects.get(pk=id)
+            virustotal_analysis = VirustotalAnalysis.objects.filter(
+                filescan__pk=id)
+            filedump = FileDump.objects.filter(
+                    offset=file.Offset, case_id=file.investigation.id)
+            if len(virustotal_analysis) == 0:
+                if len(filedump) == 0:
+                    task_res = dump_memory_file.delay(
+                        str(file.investigation.id), file.Offset)
+                    filename = task_res.get()
+                    if filename == "ERROR":
+                        return JsonResponse({'message': "failed to dump file"})
+                    FileDump.objects.create(case_id=UploadInvestigation.objects.filter(
+                        id=file.investigation.id)[0], offset=file.Offset, filename=filename)
+                    filedump = FileDump.objects.filter(
+                        offset=file.Offset, case_id=file.investigation.id)
+                # Do the analysis
+                case_path = 'Cases/Results/file_dump_' + \
+                    str(file.investigation.id)
+                scan_res = virustotal_filescan.delay(
+                    case_path+"/"+filedump[0].filename)
+                result = scan_res.get()
+
+                # Save results
+                virustotal_analysis = VirustotalAnalysis.objects.create(filescan=file, result=result,analysisId=result["data"]["id"])
+                print(result)
+            else:
+                virustotal_analysis = virustotal_analysis[0]
+                if virustotal_analysis.ongoing:
+                    res = is_filescan_done.delay(virustotal_analysis.analysisId)
+                    is_done = res.get()
+                    if is_done:
+                        virustotal_analysis.ongoing = False
+                        file_res = get_file_related_to_analysis.delay(virustotal_analysis.analysisId)
+                        result = file_res.get()
+                        virustotal_analysis.result = result
+                        virustotal_analysis.analysisId = result["data"]["id"]
+                        virustotal_analysis.save(update_fields=["result","ongoing"])
+                    else:
+                        result = virustotal_analysis.result
+                else:
+                    result = virustotal_analysis.result
+            return JsonResponse({'message': result})
+        else:
+            print("invalid")
+            # TODO Show error on toast
+            return JsonResponse({'message': "error"})
+
 
 @login_required
 def download_rule(request):
@@ -104,16 +174,17 @@ def download_rule(request):
         form = DownloadRuleForm(request.POST)
         if form.is_valid():
             id = form.cleaned_data['id']
-            rule = Rule.objects.get(pk = id)
+            rule = Rule.objects.get(pk=id)
             file_path = rule.file.path
             try:
                 response = FileResponse(open(file_path, 'rb'))
                 response['content_type'] = "application/octet-stream"
-                response['Content-Disposition'] = 'attachment; filename=' + os.path.basename(file_path)
+                response['Content-Disposition'] = 'attachment; filename=' + \
+                    os.path.basename(file_path)
                 return response
             except:
-                messages.add_message(request,messages.ERROR,'Failed to fetch the requested file')
+                messages.add_message(
+                    request, messages.ERROR, 'Failed to fetch the requested file')
 
         else:
             return JsonResponse({'message': "error"})
-

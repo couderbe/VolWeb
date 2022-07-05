@@ -14,7 +14,7 @@ def import_rules(apps, schema_editor):
                 data = yaml.load(f, Loader=yaml.SafeLoader)
                 #TODO change os when adding linux
                 Rule.objects.create(title=data['title'],os="Windows",file=File(f))
-            os.remove(path)
+            # os.remove(path)
 
 class Migration(migrations.Migration):
 

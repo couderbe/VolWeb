@@ -22,3 +22,7 @@ class ManageRuleForm(forms.Form):
 class DownloadRuleForm(forms.Form):
      id = forms.CharField(max_length=255, widget=forms.TextInput(attrs={
         'class': 'd-none','value':'n/a'}))
+
+class VirustotalForm(forms.Form):
+     id = forms.CharField(max_length=255, widget=forms.TextInput(attrs={
+        'class': 'd-none','value':'n/a'}))

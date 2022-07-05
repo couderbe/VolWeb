@@ -98,4 +98,14 @@ class Migration(migrations.Migration):
                 'abstract': False,
             },
         ),
+        migrations.CreateModel(
+            name='VirustotalAnalysis',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('ongoing', models.BooleanField(default=True)),
+                ('analysisId', models.CharField(max_length=256)),
+                ('result', models.JSONField()),
+                ('filescan', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='windows_engine.filescan')),
+            ],
+        ),
     ]
