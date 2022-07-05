@@ -134,10 +134,13 @@ def virustotal(request):
                 result = scan_res.get()
 
                 # Save results
-                virustotal_analysis = VirustotalAnalysis.objects.create(filescan=file, result=result,analysisId=result["data"]["id"])
+                ongoing = (result["data"]["type"] == "analysis")
+                virustotal_analysis = VirustotalAnalysis.objects.create(filescan=file, result=result,analysisId=result["data"]["id"],ongoing=ongoing)
                 print(result)
             else:
+                print(virustotal_analysis.values())
                 virustotal_analysis = virustotal_analysis[0]
+                print(virustotal_analysis)
                 if virustotal_analysis.ongoing:
                     res = is_filescan_done.delay(virustotal_analysis.analysisId)
                     is_done = res.get()

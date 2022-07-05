@@ -36,6 +36,7 @@ def is_filescan_done(analysis_id) -> bool:
 
     response = requests.get(url, headers=headers)
     result = json.loads(response.text)
+    print(result)
     return result["data"]["attributes"]["status"] == "completed"
 
 def upload_file(path) -> requests.Response:
