@@ -1,3 +1,4 @@
+from datetime import datetime
 from celery import uuid
 from django.db import models
 import uuid
@@ -62,5 +63,7 @@ class Rule(models.Model):
 class VirustotalAnalysis(models.Model):
     ongoing = models.BooleanField(default=True)
     analysisId = models.CharField(max_length=256)
+    widgetUrl = models.CharField(max_length=500,default="")
+    widgetDate = models.DateTimeField(default=datetime.now)
     filescan = models.ForeignKey(FileScan, on_delete=models.CASCADE)
     result = models.JSONField()

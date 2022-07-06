@@ -1,3 +1,4 @@
+from datetime import datetime
 from fileinput import filename
 from django.contrib.auth.decorators import login_required
 from django.http import FileResponse, JsonResponse
@@ -5,7 +6,7 @@ from django.shortcuts import redirect, render
 from django.contrib import messages
 from analyser.models import VirustotalAnalysis
 from analyser.rules import run_rules
-from analyser.tasks import get_file_related_to_analysis, is_filescan_done, virustotal_filescan
+from analyser.tasks import get_file_related_to_analysis, get_widget_url, is_filescan_done, virustotal_filescan
 from investigations.forms import ManageInvestigation
 from analyser.forms import *
 import os
@@ -136,11 +137,8 @@ def virustotal(request):
                 # Save results
                 ongoing = (result["data"]["type"] == "analysis")
                 virustotal_analysis = VirustotalAnalysis.objects.create(filescan=file, result=result,analysisId=result["data"]["id"],ongoing=ongoing)
-                print(result)
             else:
-                print(virustotal_analysis.values())
                 virustotal_analysis = virustotal_analysis[0]
-                print(virustotal_analysis)
                 if virustotal_analysis.ongoing:
                     res = is_filescan_done.delay(virustotal_analysis.analysisId)
                     is_done = res.get()
@@ -155,7 +153,19 @@ def virustotal(request):
                         result = virustotal_analysis.result
                 else:
                     result = virustotal_analysis.result
-            return JsonResponse({'message': result})
+            widget_url = ""
+            if not(virustotal_analysis.ongoing):
+                delta = datetime.now().timestamp() - virustotal_analysis.widgetDate.timestamp()
+                delta = delta/3600
+                if delta > 70 or virustotal_analysis.widgetUrl == "":
+                    widget_res = get_widget_url.delay(virustotal_analysis.analysisId)
+                    widget_url = widget_res.get()
+                    virustotal_analysis.widgetDate = datetime.now()
+                    virustotal_analysis.widgetUrl = widget_url
+                    virustotal_analysis.save(update_fields=["widgetDate","widgetUrl"])
+                else:
+                    widget_url = virustotal_analysis.widgetUrl
+            return JsonResponse({'message': result,'url':widget_url})
         else:
             print("invalid")
             # TODO Show error on toast

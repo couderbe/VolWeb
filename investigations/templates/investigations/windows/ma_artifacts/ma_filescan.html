@@ -1,3 +1,4 @@
+{% load static %}
 <!-- FileScan plugin results -->
 <div class="modal fade" id="showVirustotal" tabindex="-1" aria-labelledby="showVirustotal" aria-hidden="true">
   <div class="modal-dialog modal-lg">
@@ -6,10 +7,7 @@
         <h5 class="modal-title">Virustotal results</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div>
-        <pre id="virustotal-content">
-        </pre>
-      </div>
+      <iframe id="vt-augment-container" height="900" src=""></iframe>
     </div>
   </div>
 </div>
@@ -44,7 +42,9 @@
   </table>
 </div>
 {% csrf_token %}
+
 <script>
+
   function Dump(offset) {
     console.log(offset);
   }
@@ -65,13 +65,15 @@
       },
       success: function (response) {
         console.log(response['message']);
+        console.log(response['url']);
+        
         switch (response['message']['data']['type']) {
           case "analysis":
             $('#proc-message').html("Virustotal is still processing your file");
             $('.toast-proc-error').toast('show');
             break;
           case "file":
-            document.getElementById("virustotal-content").innerHTML = JSON.stringify(response['message'],undefined,2);
+            document.querySelector('#vt-augment-container').src = response['url'];
             $("#showVirustotal").modal("show");
             break;
           default:

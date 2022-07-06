@@ -78,3 +78,15 @@ def get_file_related_to_analysis(analysis_id: str) -> dict:
 
     response = requests.get(url, headers=headers)
     return json.loads(response.text)
+
+@app.task(name="get_widget_url")
+def get_widget_url(id: str) -> str:
+    url = f"https://www.virustotal.com/api/v3/widget/url?query={id}"
+
+    headers = {
+        "Accept": "application/json",
+        "X-Apikey": get_key()
+    }
+
+    response = requests.get(url, headers=headers)
+    return json.loads(response.text)["data"]["url"]
