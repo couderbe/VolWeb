@@ -1,0 +1,6 @@
+title: rundll32.exe
+condition:
+    equals:
+        - module: PsList
+          attribute: ImageFileName
+        - rundll32.exe

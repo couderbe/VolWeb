@@ -32,8 +32,6 @@
         <td>{{files.Size}}</td>
         <td>
           <a class="btn border border-light btn-sm" role="button"
-            onclick="event.stopPropagation(); Dump('{{files.Offset}}');">Dump</a>
-          <a class="btn border border-light btn-sm" role="button"
             onclick="event.stopPropagation(); Virustotal('{{files.pk}}');">Virustotal</a>
         </td>
       </tr>
@@ -44,10 +42,6 @@
 {% csrf_token %}
 
 <script>
-
-  function Dump(offset) {
-    console.log(offset);
-  }
 
   function Virustotal(pk) {
     const csrf = document.getElementsByName('csrfmiddlewaretoken');
@@ -70,7 +64,7 @@
         switch (response['message']['data']['type']) {
           case "analysis":
             $('#proc-message').html("Virustotal is still processing your file");
-            $('.toast-proc-error').toast('show');
+            $('.toast-proc').toast('show');
             break;
           case "file":
             document.querySelector('#vt-augment-container').src = response['url'];

@@ -34,8 +34,7 @@ def parse_rule(invest_id: int, path: str) -> tuple:
                 pass
             else:
                 result = "Nothing found"
-
-    return({"Title": data['title'], "Result": result})
+    return({"Title": ''.join(ch for ch in data['title'] if ch.isalnum()), "Result": result})
 
 
 @condition
