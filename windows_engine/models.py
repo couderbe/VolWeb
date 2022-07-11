@@ -188,10 +188,11 @@ class Cachedump(models.Model):
             on_delete=models.CASCADE,
             related_name="windows_cachedump_investigation"
         )
-    username = models.TextField(null = True)
-    domain = models.TextField(null = True)
-    domain_name = models.TextField(null = True)
-    hash = models.TextField(null = True)
+    Domain = models.TextField(null = True)
+    Domainname = models.TextField(null = True)
+    Hash = models.TextField(null = True)
+    Username = models.TextField(null = True)
+
 
 class HiveList(models.Model):
     investigation = models.ForeignKey(
@@ -274,3 +275,28 @@ class RulesResult(models.Model):
             related_name="windows_rules_investigation"
         )
     result = models.JSONField()
+
+class DllList(models.Model):
+    process = models.ForeignKey(
+            PsScan,
+            on_delete=models.CASCADE,
+        )
+    PID = models.IntegerField()
+    Base = models.BigIntegerField()
+    Name = models.TextField()
+    Path = models.TextField()
+    Size = models.BigIntegerField()
+    LoadTime = models.CharField(max_length=255,null=True)
+    File_output = models.CharField(max_length=500)
+
+class Handles(models.Model):
+    process = models.ForeignKey(
+            PsScan,
+            on_delete=models.CASCADE,
+        )
+    PID = models.IntegerField()
+    Offset = models.BigIntegerField()
+    Name = models.TextField(null=True)
+    HandleValue = models.IntegerField()
+    GrantedAccess = models.BigIntegerField()
+    Type = models.CharField(max_length=255)
