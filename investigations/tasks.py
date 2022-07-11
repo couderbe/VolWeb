@@ -1,9 +1,12 @@
+from unittest import result
 from analyser.models import Analysis, Command, Connection, Dump, File, Process
+from analyser.rules import run_rules
 from investigations.models import *
 from iocs.models import IOC
 from investigations.celery import app
 from windows_engine.vol_windows import *
 from linux_engine.vol_linux import *
+import windows_engine
 
 """Process dump task"""
 @app.task(name="dump_memory_pid")
@@ -46,6 +49,11 @@ def windows_memory_analysis(dump_path,case):
     else:
         case.status = "2"
     case.save()
+
+    # Run rules detection
+    logger.info("Running detection rules")
+    
+    windows_engine.models.RulesResult.objects.create(investigation_id=case.id, result=run_rules(case.id))    
 
     # Generate model for analyser
     #TODO Handle all cases

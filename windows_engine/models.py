@@ -266,3 +266,11 @@ class Strings(models.Model):
     String = models.TextField(null = True)
     PhysicalAddress = models.BigIntegerField(null = True)
     Result = models.TextField(null = True)
+
+class RulesResult(models.Model):
+    investigation = models.ForeignKey(
+            UploadInvestigation,
+            on_delete=models.CASCADE,
+            related_name="windows_rules_investigation"
+        )
+    result = models.JSONField()
