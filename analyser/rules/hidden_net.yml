@@ -1,9 +1,0 @@
-title: Potential hidden network connections
-condition:
-    intersect:
-        - module: NetScan
-        - module: NetStat
-        - attributes:
-            PID : PID
-            Owner : Owner
-        - not: True

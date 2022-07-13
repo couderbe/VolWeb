@@ -37,6 +37,10 @@ def dlllist_task(case_id: int, id: int):
     constructed = construct_plugin(context, plugin, path)
     result = DictRenderer().render(constructed.run())
     for res in result:
+        del res['__children']
+        del res['Process']
+        res['File_output'] = res['File output']
+        del res['File output']
         windows_engine.models.DllList.objects.create(process=process, **res)
 
 

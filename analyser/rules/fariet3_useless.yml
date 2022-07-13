@@ -1,0 +1,11 @@
+title: Useless fariet3
+selection:
+  module: PsList
+  fields:
+    - name: iexplore.exe
+  filter1:
+    parent:
+      - name: svchost.exe
+  filter2:
+    dll:
+      - path: C:\Users\user\AppData\Roaming\colocs.dll

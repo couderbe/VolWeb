@@ -1,0 +1,5 @@
+title: test rule
+selection:
+  module: NetStat
+  fields:
+    - Owner: iexplore.exe

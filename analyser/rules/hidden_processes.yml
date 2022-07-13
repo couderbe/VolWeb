@@ -1,9 +1,10 @@
-title: Potential hidden processes
-condition:
-    intersect:
-        - module: PsScan
-        - module: PsList
-        - attributes:
-            PID : PID
-            ImageFileName : ImageFileName
-        - not: True
+title: Potential Hidden Processes
+intersect:
+  selection1:
+    module: PsScan
+  selection2:
+    module: PsList
+  fields:
+    - PID: PID
+    - ImageFileName: ImageFileName
+  not: True

@@ -1,6 +1,0 @@
-title: This is a test rule
-condition:
-    equals:
-        - module: NetStat
-          attribute: Owner
-        - iexplore.exe

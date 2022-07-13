@@ -1,13 +1,66 @@
-from cgitb import enable
-import os
 from typing import Callable
 import yaml
 from yaml.loader import SafeLoader
 from windows_engine.models import *
 from analyser.models import *
+import re
 
 CONDITIONS = {}
+KEYWORD_TO_FUNCTION = {}
+FILTER_TO_FUNCTION = {}
+FILTER_PATTERN = re.compile(r'^filter[0-9]*$')
 
+def keyword(func: Callable) -> Callable:
+    KEYWORD_TO_FUNCTION[func.__name__] = func
+    return func
+
+def filter(func: Callable) -> Callable:
+    FILTER_TO_FUNCTION[func.__name__] = func
+    return func
+
+@keyword
+def selection(data: dict,invest_id: int):
+    module = ""
+    fields = {}
+    filters = []
+    for key,value in data.items():
+        if key == "module":
+            module = value
+        elif key == "fields":
+            for elt in value:
+                fields.update(elt)
+        elif FILTER_PATTERN.match(key):
+            filters.append(value)
+    print(filters)
+    unfiltered = eval(module).objects.filter(investigation_id=invest_id, **fields)
+    print(unfiltered.values())
+    result = unfiltered
+    for filter in filters:
+        result = FILTER_TO_FUNCTION[filter.keys()[0]](result,filter.values()[0])
+    return result
+
+@keyword
+def intersect(data: dict,invest_id: int):
+    query_set_1 = selection(data["selection1"])
+    query_set_2 = selection(data["selection2"])
+    if data["not"]:
+        result = query_set_1.difference(query_set_2)
+    else:
+        result = query_set_1.intersection(query_set_2)
+    print(result)
+    return result
+
+@filter
+def parent(data, args: 'list[dict]'):
+    return data
+
+@filter
+def dll(data, args: 'list[dict]'):
+    return data
+
+@filter
+def handles(data, args: 'list[dict]'):
+    return data
 
 def condition(func: Callable) -> Callable:
     CONDITIONS[func.__name__] = func
@@ -19,10 +72,26 @@ def run_rules(invest_id: int) -> dict:
     rules = Rule.objects.filter(enabled=True)
     for rule in rules:
         output.append(parse_rule(invest_id, str(rule.file)))
+    print("____________________output___________________")
+    print(output)
     return output
 
-
 def parse_rule(invest_id: int, path: str) -> tuple:
+    with open(path) as f:
+        data = yaml.load(f, Loader=SafeLoader)
+    print(data)
+    result = ""
+    for key,value in data.items():
+        if key == "title":
+            title = value
+        else:
+            try:
+                result = list(KEYWORD_TO_FUNCTION[key](value, invest_id).values())
+            except Exception as e:
+                print(f"Error: {e}")
+    return ({"Title": ''.join(ch for ch in title if ch.isalnum()), "Result": result})
+
+def parse_rule_old(invest_id: int, path: str) -> tuple:
     result = "Unable to find known condition"
     with open(path) as f:
         data = yaml.load(f, Loader=SafeLoader)
@@ -67,7 +136,7 @@ def intersect(invest_id: int, params) -> list:
     else:
         return "Intersect not supported operand types"
 
-
+      
 @condition
 def equals(invest_id: int, params) -> list:
     if isinstance(params[0], dict) and isinstance(params[1], str):

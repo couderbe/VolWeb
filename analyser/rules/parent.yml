@@ -1,12 +1,8 @@
-title: Suspicious child process
-condition:
-    intersect:
-        - module: PsScan
-        - condition:
-              equals:
-                  - module: PsScan
-                    attribute: ImageFileName
-                  - Wire Payment C
-        - attributes:
-            PPID: PID
-        - not: False
+title: Suspicious childProcess
+selection:
+  module: PsList
+  fields:
+    - ImageFileName: iexplore.exe
+  filter:
+    parent:
+      - ImageFileName: svchost.exe

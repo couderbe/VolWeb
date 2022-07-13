@@ -2,8 +2,11 @@ from datetime import datetime
 from celery import uuid
 from django.db import models
 import uuid
+import os
 
 from windows_engine.models import CmdLine, FileScan, NetScan, NetStat, PsScan
+from django.conf import settings
+from django.core.files.storage import FileSystemStorage
 
 CHOICES = (
     ('Windows', 'Windows'),
@@ -51,12 +54,17 @@ class Connection(Node):
 class File(Node):
     file = models.ForeignKey(FileScan, on_delete=models.CASCADE)
 
+class RulesStorage(FileSystemStorage):
 
+    def get_available_name(self, name, max_length=None):
+        if self.exists(name):
+            os.remove(os.path.join(settings.MEDIA_ROOT, name))
+        return name
 class Rule(models.Model):
     id = models.AutoField(primary_key=True)
     title = models.TextField()
     enabled = models.BooleanField(default=True)
-    file = models.FileField(upload_to="analyser/rules")
+    file = models.FileField(storage=RulesStorage(),upload_to="analyser/rules")
     os = models.CharField(max_length=50, choices=CHOICES)
 
 
