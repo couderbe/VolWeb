@@ -1,11 +1,11 @@
 title: Useless fariet3
 selection:
-  module: PsList
+  module: PsScan
   fields:
-    - name: iexplore.exe
+    - ImageFileName: iexplore.exe
   filter1:
     parent:
-      - name: svchost.exe
+      - ImageFileName: svchost.exe
   filter2:
     dll:
-      - path: C:\Users\user\AppData\Roaming\colocs.dll
+      - Path: C:\Users\user\AppData\Roaming\colcs.dll

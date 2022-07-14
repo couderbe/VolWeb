@@ -1,6 +1,6 @@
 title: Suspicious childProcess
 selection:
-  module: PsList
+  module: PsScan
   fields:
     - ImageFileName: iexplore.exe
   filter:

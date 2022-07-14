@@ -1,5 +1,5 @@
 title: rundll32.exe
 selection:
-  module: PsList
+  module: PsScan
   fields:
     - ImageFileName: rundll32.exe

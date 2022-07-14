@@ -4,6 +4,8 @@ from yaml.loader import SafeLoader
 from windows_engine.models import *
 from analyser.models import *
 import re
+from django.db.models.query import QuerySet
+from windows_engine.tasks import dlllist_task
 
 CONDITIONS = {}
 KEYWORD_TO_FUNCTION = {}
@@ -18,6 +20,13 @@ def filter(func: Callable) -> Callable:
     FILTER_TO_FUNCTION[func.__name__] = func
     return func
 
+def field_to_regex(request :dict) -> dict:
+    print(request)
+    for key in request.keys():
+        request[f"{key}__regex"] = request.pop(key)
+    print(request)
+    return request
+
 @keyword
 def selection(data: dict,invest_id: int):
     module = ""
@@ -31,18 +40,16 @@ def selection(data: dict,invest_id: int):
                 fields.update(elt)
         elif FILTER_PATTERN.match(key):
             filters.append(value)
-    print(filters)
     unfiltered = eval(module).objects.filter(investigation_id=invest_id, **fields)
-    print(unfiltered.values())
     result = unfiltered
     for filter in filters:
-        result = FILTER_TO_FUNCTION[filter.keys()[0]](result,filter.values()[0])
+        result = FILTER_TO_FUNCTION[list(filter.keys())[0]](result,list(filter.values())[0],invest_id)
     return result
 
 @keyword
 def intersect(data: dict,invest_id: int):
-    query_set_1 = selection(data["selection1"])
-    query_set_2 = selection(data["selection2"])
+    query_set_1 = selection(data["selection1"],invest_id)
+    query_set_2 = selection(data["selection2"],invest_id)
     if data["not"]:
         result = query_set_1.difference(query_set_2)
     else:
@@ -51,15 +58,42 @@ def intersect(data: dict,invest_id: int):
     return result
 
 @filter
-def parent(data, args: 'list[dict]'):
+def parent(data, args: 'list[dict[str,str]]', case_id: int) -> QuerySet:
+    # Convert list of dict in to one single dict (All parameters should be different)
+    conditions = {k: v for d in args for k,v in d.items()}
+    for process in data:
+        # Find parents in PsScan
+        parents = PsScan.objects.filter(investigation= case_id, PID=process.PPID)
+        # Filter with the conditions in args and exclude the result if empty
+        parents = parents.filter(**conditions)
+        if len(parents) == 0:
+            data = data.exclude(pk=process.pk)
     return data
 
 @filter
-def dll(data, args: 'list[dict]'):
+def dll(data, args: 'list[dict[str,str]]',case_id: int) -> QuerySet:
+    # Convert list of dict in to one single dict (All parameters should be different)
+    conditions = {k: v for d in args for k,v in d.items()}
+    print(f"Conditions = {conditions}")
+    for process in data:
+        print("*****dlls*****")
+        print(process)
+        # If the dllList has never been computed , do it
+        dll_list = DllList.objects.filter(process__pk=process.pk)
+        if len(dll_list) == 0:
+            dlllist_task(case_id, process.pk)
+            dll_list = DllList.objects.filter(process__pk=process.pk)
+        print(list(dll_list.values()))
+        # Filter with the conditions in args and exclude the result if empty
+        dll_list = dll_list.filter(**conditions)
+        print(list(dll_list.values()))
+        if len(dll_list) == 0:
+            data = data.exclude(pk=process.pk)
+            print(process.pk)
     return data
 
 @filter
-def handles(data, args: 'list[dict]'):
+def handles(data, args: 'list[dict[str,str]]') -> QuerySet:
     return data
 
 def condition(func: Callable) -> Callable:
