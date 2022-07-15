@@ -8,4 +8,4 @@ selection:
       - ImageFileName: svchost.exe
   filter2:
     dll:
-      - Path: C:\Users\user\AppData\Roaming\colcs.dll
+      - ~Path__regex: ^C:\\Windows\\.*$|^C:\\Program Files\\.*$

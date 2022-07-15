@@ -5,7 +5,8 @@ from windows_engine.models import *
 from analyser.models import *
 import re
 from django.db.models.query import QuerySet
-from windows_engine.tasks import dlllist_task
+from django.db.models import Q
+from windows_engine.tasks import dlllist_task, handles_task
 
 CONDITIONS = {}
 KEYWORD_TO_FUNCTION = {}
@@ -20,27 +21,32 @@ def filter(func: Callable) -> Callable:
     FILTER_TO_FUNCTION[func.__name__] = func
     return func
 
-def field_to_regex(request :dict) -> dict:
-    print(request)
-    for key in request.keys():
-        request[f"{key}__regex"] = request.pop(key)
-    print(request)
-    return request
+def fields_to_query(request :'list[dict[str,str]]') -> Q:
+    query = Q()
+    for elt in request:
+        sub_query = Q()
+        for text in list(elt.values())[0].split("|"):
+            if (field := list(elt.keys())[0]).startswith("~"):
+                sub_query &= ~Q(**{field[1:]: text})
+            else:
+                sub_query |= Q(**{field: text})
+        query &= sub_query
+    return query
 
 @keyword
 def selection(data: dict,invest_id: int):
     module = ""
-    fields = {}
     filters = []
+    query = Q(investigation_id=invest_id)
     for key,value in data.items():
         if key == "module":
             module = value
         elif key == "fields":
-            for elt in value:
-                fields.update(elt)
+            query &= fields_to_query(value)
         elif FILTER_PATTERN.match(key):
             filters.append(value)
-    unfiltered = eval(module).objects.filter(investigation_id=invest_id, **fields)
+
+    unfiltered = eval(module).objects.filter(query)
     result = unfiltered
     for filter in filters:
         result = FILTER_TO_FUNCTION[list(filter.keys())[0]](result,list(filter.values())[0],invest_id)
@@ -59,41 +65,44 @@ def intersect(data: dict,invest_id: int):
 
 @filter
 def parent(data, args: 'list[dict[str,str]]', case_id: int) -> QuerySet:
-    # Convert list of dict in to one single dict (All parameters should be different)
-    conditions = {k: v for d in args for k,v in d.items()}
+    query = fields_to_query(args)
     for process in data:
         # Find parents in PsScan
         parents = PsScan.objects.filter(investigation= case_id, PID=process.PPID)
         # Filter with the conditions in args and exclude the result if empty
-        parents = parents.filter(**conditions)
+        parents = parents.filter(query)
         if len(parents) == 0:
             data = data.exclude(pk=process.pk)
     return data
 
 @filter
 def dll(data, args: 'list[dict[str,str]]',case_id: int) -> QuerySet:
-    # Convert list of dict in to one single dict (All parameters should be different)
-    conditions = {k: v for d in args for k,v in d.items()}
-    print(f"Conditions = {conditions}")
+    query = fields_to_query(args)
     for process in data:
-        print("*****dlls*****")
-        print(process)
         # If the dllList has never been computed , do it
         dll_list = DllList.objects.filter(process__pk=process.pk)
         if len(dll_list) == 0:
             dlllist_task(case_id, process.pk)
             dll_list = DllList.objects.filter(process__pk=process.pk)
-        print(list(dll_list.values()))
         # Filter with the conditions in args and exclude the result if empty
-        dll_list = dll_list.filter(**conditions)
-        print(list(dll_list.values()))
+        dll_list = dll_list.filter(query)
         if len(dll_list) == 0:
             data = data.exclude(pk=process.pk)
-            print(process.pk)
     return data
 
 @filter
-def handles(data, args: 'list[dict[str,str]]') -> QuerySet:
+def handles(data, args: 'list[dict[str,str]]',case_id: int) -> QuerySet:
+    query = fields_to_query(args)
+    for process in data:
+        # If the handles has never been computed , do it
+        handles = Handles.objects.filter(process__pk=process.pk)
+        if len(handles) == 0:
+            handles_task(case_id, process.pk)
+            handles = Handles.objects.filter(process__pk=process.pk)
+        # Filter with the conditions in args and exclude the result if empty
+        handles = handles.filter(query)
+        if len(handles) == 0:
+            data = data.exclude(pk=process.pk)
     return data
 
 def condition(func: Callable) -> Callable:
@@ -106,8 +115,6 @@ def run_rules(invest_id: int) -> dict:
     rules = Rule.objects.filter(enabled=True)
     for rule in rules:
         output.append(parse_rule(invest_id, str(rule.file)))
-    print("____________________output___________________")
-    print(output)
     return output
 
 def parse_rule(invest_id: int, path: str) -> tuple:
