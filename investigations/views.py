@@ -284,8 +284,8 @@ def reviewinvest(request):
                     'Malfind' : windows_engine.Malfind.objects.filter(investigation_id = id),
                     'FileScan' : windows_engine.FileScan.objects.filter(investigation_id = id),
                     'Strings' : windows_engine.Strings.objects.filter(investigation_id = id),
-                    'Detection': run_rules(id),
-                    # 'Detection': windows_engine.RulesResult.objects.filter(investigation_id= id)[0].result,
+                    #'Detection': run_rules(id),
+                    'Detection': json.loads(windows_engine.RulesResult.objects.get(investigation_id= id).result),
                 }
                 context.update(forms)
                 context.update(models)
