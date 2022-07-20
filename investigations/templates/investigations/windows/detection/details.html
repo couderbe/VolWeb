@@ -2,7 +2,6 @@
 {% for rule in Detection %}
 <div id="{{rule.Title|cut:' '  }}Modal" style="display: none;">
     {% for type,elems in rule.Artefacts.items %}
-    <!-- type : parent,dll -->
     <h6 class="h6">{{type}}</h6>
     <table class="table table-light  card-font" style="table-layout:fixed;width:100%;word-wrap:break-word;">
         <thead>
@@ -16,7 +15,6 @@
         </thead>
         <tbody>
             {% for eltKey,elem in elems.items %}
-            <!-- id  -->
                 <tr id="{{eltKey}}" class="modal-body-tr" style="display: none;">
                     {% for key,value in elem.0.items %}
                         <td>{{value}}</td>
