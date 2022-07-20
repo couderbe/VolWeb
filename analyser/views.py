@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import FileResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.contrib import messages
-from analyser.models import VirustotalAnalysis, VirustotalAnalysisFile, VirustotalAnalysisProcess
+from analyser.models import VirustotalAnalysis, VirustotalAnalysisDll, VirustotalAnalysisFile, VirustotalAnalysisProcess
 from analyser.rules import run_rules
 from analyser.tasks import get_file_related_to_analysis, get_widget_url, is_filescan_done, virustotal_filescan
 from investigations.forms import ManageInvestigation
@@ -12,7 +12,7 @@ from analyser.forms import *
 import os
 from investigations.models import UploadInvestigation
 from investigations.tasks import dump_memory_file, dump_memory_pid
-from windows_engine.models import FileDump, FileScan, ProcessDump, PsScan
+from windows_engine.models import DllList, FileDump, FileScan, ProcessDump, PsScan
 
 
 @login_required
@@ -184,7 +184,7 @@ def virustotal_process(request):
                     process_dump = ProcessDump.objects.filter(
                         pid=ps.PID, case_id=ps.investigation.id)
                 # Do the analysis
-                case_path = 'Cases/Results/file_dump_' + \
+                case_path = 'Cases/Results/process_dump_' + \
                     str(ps.investigation.id)
                 scan_res = virustotal_filescan.delay(
                     case_path+"/"+process_dump[0].filename)
@@ -193,6 +193,47 @@ def virustotal_process(request):
                 # Save results
                 ongoing = (result["data"]["type"] == "analysis")
                 virustotal_analysis = VirustotalAnalysisProcess.objects.create(processScan=ps, result=result,analysisId=result["data"]["id"],ongoing=ongoing)
+            else:
+                virustotal_analysis = virustotal_analysis[0]
+                if virustotal_analysis.ongoing:
+                    result = virustotal_analysis.manageOngoing()
+                else:
+                    result = virustotal_analysis.result
+            widget_url = ""
+            if not(virustotal_analysis.ongoing):
+                widget_url = virustotal_analysis.manageDone()
+            return JsonResponse({'message': result,'url':widget_url})
+        else:
+            return JsonResponse({'message': "error"})
+
+@login_required
+def virustotal_dll(request):
+    """Virustotal analysis
+
+        Arguments:
+        request : http request object
+
+        Comments:
+        Start analysis with virustotal for a file
+        If the analysis is already running show status.
+        If the analysis is done show results
+        """
+    if request.method == "POST":
+        form = VirustotalForm(request.POST)
+        if form.is_valid():
+            id = form.cleaned_data['id']
+            dll = DllList.objects.get(pk=id)
+            virustotal_analysis = VirustotalAnalysisDll.objects.filter(
+                dllList__pk=id)
+            if len(virustotal_analysis) == 0:
+                # Do the analysis
+                dll_path = f'Cases/Results/dll_dump_{str(dll.process.investigation.id)}/{dll.File_output}'
+                scan_res = virustotal_filescan.delay(dll_path)
+                result = scan_res.get()
+
+                # Save results
+                ongoing = (result["data"]["type"] == "analysis")
+                virustotal_analysis = VirustotalAnalysisDll.objects.create(dllList=dll, result=result,analysisId=result["data"]["id"],ongoing=ongoing)
             else:
                 virustotal_analysis = virustotal_analysis[0]
                 if virustotal_analysis.ongoing:

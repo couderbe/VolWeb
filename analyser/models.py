@@ -5,7 +5,7 @@ import uuid
 import os
 from analyser.tasks import get_file_related_to_analysis, get_widget_url, is_filescan_done
 
-from windows_engine.models import CmdLine, FileScan, NetScan, PsScan
+from windows_engine.models import CmdLine, DllList, FileScan, NetScan, PsScan
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 
@@ -77,7 +77,6 @@ class VirustotalAnalysis(models.Model):
     analysisId = models.CharField(max_length=256)
     widgetUrl = models.CharField(max_length=500, default="")
     widgetDate = models.DateTimeField(default=datetime.now)
-    filescan = models.ForeignKey(FileScan, on_delete=models.CASCADE)
     result = models.JSONField()
 
     class Meta:
@@ -116,3 +115,6 @@ class VirustotalAnalysisFile(VirustotalAnalysis):
 
 class VirustotalAnalysisProcess(VirustotalAnalysis):
     processScan = models.ForeignKey(PsScan, on_delete=models.CASCADE)
+
+class VirustotalAnalysisDll(VirustotalAnalysis):
+    dllList = models.ForeignKey(DllList, on_delete=models.CASCADE)

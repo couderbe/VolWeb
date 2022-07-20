@@ -9,4 +9,5 @@ urlpatterns = [
     path('download_rule/', views.download_rule, name='download_rule'),
     path('virustotal_file/', views.virustotal_file, name='virustotal_file'),
     path('virustotal_process/', views.virustotal_process, name='virustotal_process'),
+    path('virustotal_dll/', views.virustotal_dll, name='virustotal_dll'),
 ]

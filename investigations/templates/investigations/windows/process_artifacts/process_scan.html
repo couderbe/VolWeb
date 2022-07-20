@@ -104,17 +104,29 @@
           let fields = document.getElementsByClassName("dlllist_field");
           for(field of fields){
             if(field.innerHTML === "Actions"){
-              let btn = document.createElement("button");
-              btn.type = "button";
-              btn.class = "btn btn-dark border border-dark";
-              btn.innerHTML = "Download";
-              btn.setAttribute("dll_id",dll['pk']);
-              btn.addEventListener("click",function () {
+              // Download button generation
+              let btnDownload = document.createElement("button");
+              btnDownload.type = "button";
+              btnDownload.class = "btn btn-dark border";
+              btnDownload.innerHTML = "Download";
+              btnDownload.setAttribute("dll_id",dll['pk']);
+              btnDownload.addEventListener("click",function () {
                 let filename = $(this).closest("tr").find(".File_output").text();
                 DownloadDll(this.getAttribute("dll_id"),filename);
               });
               let cell = row.insertCell();
-              cell.appendChild(btn);
+              cell.appendChild(btnDownload);
+
+              // Virustotal button generation
+              let btnVirustotal = document.createElement("button");
+              btnVirustotal.type = "button";
+              btnVirustotal.class = "btn btn-dark border";
+              btnVirustotal.innerHTML = "Virustotal";
+              btnVirustotal.setAttribute("dll_id",dll['pk']);
+              btnVirustotal.addEventListener("click",function () {
+                Virustotal_dll(this.getAttribute("dll_id"));
+              });
+              cell.appendChild(btnVirustotal);
             }
             else{
               let cell = row.insertCell();
@@ -234,47 +246,13 @@
         processData: false
       });
   }
+  
+  function Virustotal_dll(pk) {
+    Virustotal(pk,"{% url 'virustotal_dll' %}");
+  }
 
   function Virustotal_process(pk) {
-    const csrf = document.getElementsByName('csrfmiddlewaretoken');
-    const fd = new FormData();
-    fd.append('csrfmiddlewaretoken', csrf[0].value);
-    fd.append('id', pk);
-    $.ajax({
-      type: 'POST',
-      url: "{% url 'virustotal_process' %}",
-      enctype: 'multipart/form-data',
-      data: fd,
-      beforeSend: function () {
-        $('#proc-message').html("Your Virustotal request was taken into account");
-        $('.toast-proc').toast('show');
-      },
-      success: function (response) {
-        console.log(response['message']);
-        console.log(response['url']);
-        
-        switch (response['message']['data']['type']) {
-          case "analysis":
-            $('#proc-message').html("Virustotal is still processing your file");
-            $('.toast-proc').toast('show');
-            break;
-          case "file":
-            document.querySelector('#vt-augment-container').src = response['url'];
-            $("#showVirustotal").modal("show");
-            break;
-          default:
-            break;
-        }
-      },
-      error: function (error) {
-        console.log(error);
-        $('#proc-error-message').html("Virustotal analysis error");
-        $('.toast-proc-error').toast('show');
-      },
-      cache: false,
-      contentType: false,
-      processData: false
-    });
+    Virustotal(pk,"{% url 'virustotal_process' %}");
   }
 
 </script>

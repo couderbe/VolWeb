@@ -377,3 +377,45 @@ $(document).ready(function(){
 
   }
 });
+
+function Virustotal(pk,url) {
+  const csrf = document.getElementsByName('csrfmiddlewaretoken');
+  const fd = new FormData();
+  fd.append('csrfmiddlewaretoken', csrf[0].value);
+  fd.append('id', pk);
+  $.ajax({
+    type: 'POST',
+    url: url,
+    enctype: 'multipart/form-data',
+    data: fd,
+    beforeSend: function () {
+      $('#proc-message').html("Your Virustotal request was taken into account");
+      $('.toast-proc').toast('show');
+    },
+    success: function (response) {
+      console.log(response['message']);
+      console.log(response['url']);
+      
+      switch (response['message']['data']['type']) {
+        case "analysis":
+          $('#proc-message').html("Virustotal is still processing your file");
+          $('.toast-proc').toast('show');
+          break;
+        case "file":
+          document.querySelector('#vt-augment-container').src = response['url'];
+          $("#showVirustotal").modal("show");
+          break;
+        default:
+          break;
+      }
+    },
+    error: function (error) {
+      console.log(error);
+      $('#proc-error-message').html("Virustotal analysis error");
+      $('.toast-proc-error').toast('show');
+    },
+    cache: false,
+    contentType: false,
+    processData: false
+  });
+}
