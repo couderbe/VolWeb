@@ -61,3 +61,7 @@ class HandlesForm(forms.Form):
         'class': 'd-none','value':'n/a'}))
      case_id = forms.CharField(max_length=255, widget=forms.TextInput(attrs={
         'class': 'd-none','value':'n/a'}))
+
+class DownloadDll(forms.Form):
+     id = forms.CharField(max_length=255, widget=forms.TextInput(attrs={
+        'class': 'd-none','value':'n/a'}))

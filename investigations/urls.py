@@ -16,5 +16,6 @@ urlpatterns = [
     path('download_hive/',views.download_hive, name='download_hive'),
     path('dlllist/',views.dlllist, name='dlllist'),
     path('handles/',views.handles, name='handles'),
+    path('download_dll/',views.download_dll, name='download_dll'),
 
  ]

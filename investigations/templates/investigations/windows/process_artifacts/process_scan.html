@@ -57,6 +57,11 @@
     </tbody>
   </table>
 </div>
+
+<form id="dllFrom" action="{% url 'download_dll' %}" method="POST">
+  {{dl_dll_form.id}}
+</form>
+
 {% csrf_token %}
 
 <script>
@@ -96,9 +101,26 @@
           let row = body.insertRow();
           let fields = document.getElementsByClassName("dlllist_field");
           for(field of fields){
-            let cell = row.insertCell();
-            cell.innerHTML = dll['fields'][field.innerHTML];
-          }   
+            if(field.innerHTML === "Actions"){
+              let btn = document.createElement("button");
+              btn.type = "button";
+              btn.class = "btn btn-dark border border-dark";
+              btn.innerHTML = "Download";
+              btn.setAttribute("dll_id",dll['pk']);
+              btn.addEventListener("click",function () {
+                let filename = $(this).closest("tr").find(".File_output").text();
+                DownloadDll(this.getAttribute("dll_id"),filename);
+              });
+              let cell = row.insertCell();
+              cell.appendChild(btn);
+            }
+            else{
+              let cell = row.insertCell();
+              cell.innerHTML = dll['fields'][field.innerHTML];
+              cell.classList.add(field.innerHTML);
+            }
+          }
+          
         }
         $('.spinner-main').hide();
         $("#showProcessScanModal").modal("show");
@@ -159,6 +181,56 @@
       contentType: false,
       processData: false
     });
+  }
+
+  function DownloadDll(dll_pk,filename){
+      const csrf = document.getElementsByName('csrfmiddlewaretoken');
+      const fd = new FormData();
+      fd.append('csrfmiddlewaretoken', csrf[0].value);
+      fd.append('id', dll_pk);
+      $.ajax({
+        type:'POST',
+        url: "{% url 'download_dll' %}",
+        enctype: 'multipart/form-data',
+        data: fd,
+        beforeSend: function(){
+          $('#proc-message').html("Requesting download...");
+          $('.toast-proc').toast('show');
+        },
+        success: function(data){
+          //FIXME 
+          //Convert the Byte Data to BLOB object.
+                    console.log(typeof(data));
+                    console.log(data.length);
+                    const raw = new Uint8Array(data.length);
+                    for (let i = 0; i < data.length; i++){
+                      raw[i] = data[i].charCodeAt(0);
+                    }
+                    var blob = new Blob([raw], { type: "application/octet-stream" });
+                    console.log(blob);
+                    //Check the Browser type and download the File.
+                    var isIE = false || !!document.documentMode;
+                    if (isIE) {
+                        window.navigator.msSaveBlob(blob, filename);
+                    } else {
+                        var url = window.URL || window.webkitURL;
+                        link = url.createObjectURL(blob);
+                        var a = $("<a />");
+                        a.attr("download", filename);
+                        a.attr("href", link);
+                        $("body").append(a);
+                        a[0].click();
+                        $("body").remove(a);
+                    }
+        },
+        error: function(error){
+          $('#proc-error-message').html("Download failed ! :(");
+          $('.toast-proc-error').toast('show');
+        },
+        cache: false,
+        contentType : false,
+        processData: false
+      });
   }
 
 </script>

@@ -1,4 +1,3 @@
-from unittest import result
 from analyser.models import Analysis, Command, Connection, Dump, File, Process
 from analyser.rules import run_rules
 from investigations.models import *

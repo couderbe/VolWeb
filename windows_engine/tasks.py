@@ -1,3 +1,4 @@
+import subprocess
 from investigations.celery import app
 import volatility3
 import os
@@ -14,15 +15,15 @@ def init_volatility():
     return plugin_list, context
 
 
-def construct_plugin(context, plugin, path):
+def construct_plugin(context, plugin, dump_path, output_path="Cases/files"):
     available_automagics = volatility3.framework.automagic.available(context)
     automagics = volatility3.framework.automagic.choose_automagic(
         available_automagics, plugin)
     context.config['automagic.LayerStacker.stackers'] = volatility3.framework.automagic.stacker.choose_os_stackers(
         plugin)
     context.config['automagic.LayerStacker.single_location'] = "file://" + \
-        os.getcwd() + "/" + path
-    return volatility3.framework.plugins.construct_plugin(context, automagics, plugin, "plugins", None, file_handler("Cases/files"))
+        os.getcwd() + "/" + dump_path
+    return volatility3.framework.plugins.construct_plugin(context, automagics, plugin, "plugins", None, file_handler(output_path))
 
 
 @app.task(name="dlllist_task")
@@ -32,9 +33,15 @@ def dlllist_task(case_id: int, id: int):
     path = 'Cases/' + case.existingPath
     plugin_list, context = init_volatility()
     plugin = plugin_list["windows.dlllist.DllList"]
-    context.config["plugins.DllList.dump"] = False
+    # Dump the dlls for future download
+    context.config["plugins.DllList.dump"] = True
     context.config["plugins.DllList.pid"] = [process.PID]
-    constructed = construct_plugin(context, plugin, path)
+    output_path = f"Cases/Results/dll_dump_{case.id}"
+    try:
+        subprocess.check_output(['mkdir', output_path])
+    except:
+        pass
+    constructed = construct_plugin(context, plugin, path, output_path)
     result = DictRenderer().render(constructed.run())
     for res in result:
         del res['__children']

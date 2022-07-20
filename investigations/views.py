@@ -1,7 +1,7 @@
 from analyser.rules import run_rules
 from windows_engine.tasks import dlllist_task, handles_task
 from .tasks import start_memory_analysis, dump_memory_pid, app, dump_memory_file
-from django.http import StreamingHttpResponse, FileResponse, JsonResponse
+from django.http import HttpResponse, FileResponse, JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import get_user_model
@@ -259,6 +259,7 @@ def reviewinvest(request):
                     'dump_file_form': DumpFile(),
                     'download_file_form': DownloadFile(),
                     'form': DumpMemory(),
+                    'dl_dll_form': DownloadDll(),
                 }
                 #Models
                 models = {
@@ -524,4 +525,31 @@ def handles(request):
             return JsonResponse({'message': result})
         else:
             print("invalid")
+            return JsonResponse({'message': "error"})
+
+
+@login_required
+def download_dll(request):
+    """Download a dll
+
+        Arguments:
+        request : http request object
+
+        Comment:
+        The user requested to download a dll.
+        Get the file and return it.
+        """
+    if request.method == 'POST':
+        form = DownloadDll(request.POST)
+        if form.is_valid():
+            dll_id = form.cleaned_data['id']
+            dll = windows_engine.DllList.objects.get(pk = dll_id)
+            dll_path = f'Cases/Results/dll_dump_{str(dll.process.investigation.id)}/{dll.File_output}'
+            try:
+                response = FileResponse(open(dll_path, 'rb'),as_attachment=True,filename=dll.File_output)
+                return response
+            except:
+                messages.add_message(request,messages.ERROR,'Failed to fetch the requested process')
+
+        else:
             return JsonResponse({'message': "error"})
