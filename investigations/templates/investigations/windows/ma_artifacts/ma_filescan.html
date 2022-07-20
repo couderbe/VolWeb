@@ -32,7 +32,7 @@
         <td>{{files.Size}}</td>
         <td>
           <a class="btn border border-light btn-sm" role="button"
-            onclick="event.stopPropagation(); Virustotal('{{files.pk}}');">Virustotal</a>
+            onclick="event.stopPropagation(); Virustotal_file('{{files.pk}}');">Virustotal</a>
         </td>
       </tr>
       {% endfor %}
@@ -43,14 +43,14 @@
 
 <script>
 
-  function Virustotal(pk) {
+  function Virustotal_file(pk) {
     const csrf = document.getElementsByName('csrfmiddlewaretoken');
     const fd = new FormData();
     fd.append('csrfmiddlewaretoken', csrf[0].value);
     fd.append('id', pk);
     $.ajax({
       type: 'POST',
-      url: "{% url 'virustotal' %}",
+      url: "{% url 'virustotal_file' %}",
       enctype: 'multipart/form-data',
       data: fd,
       beforeSend: function () {

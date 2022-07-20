@@ -51,6 +51,8 @@
             onclick="event.stopPropagation(); DllList('{{case.id}}','{{process.pk}}');">Dll List</a>
           <a class="btn border border-light btn-sm" role="button"
             onclick="event.stopPropagation(); Handles('{{case.id}}','{{process.pk}}');">Handles List</a>
+            <a class="btn border border-light btn-sm" role="button"
+            onclick="event.stopPropagation(); Virustotal_process('{{process.pk}}');">Virustotal</a>
         </td>
       </tr>
       {% endfor %}
@@ -231,6 +233,48 @@
         contentType : false,
         processData: false
       });
+  }
+
+  function Virustotal_process(pk) {
+    const csrf = document.getElementsByName('csrfmiddlewaretoken');
+    const fd = new FormData();
+    fd.append('csrfmiddlewaretoken', csrf[0].value);
+    fd.append('id', pk);
+    $.ajax({
+      type: 'POST',
+      url: "{% url 'virustotal_process' %}",
+      enctype: 'multipart/form-data',
+      data: fd,
+      beforeSend: function () {
+        $('#proc-message').html("Your Virustotal request was taken into account");
+        $('.toast-proc').toast('show');
+      },
+      success: function (response) {
+        console.log(response['message']);
+        console.log(response['url']);
+        
+        switch (response['message']['data']['type']) {
+          case "analysis":
+            $('#proc-message').html("Virustotal is still processing your file");
+            $('.toast-proc').toast('show');
+            break;
+          case "file":
+            document.querySelector('#vt-augment-container').src = response['url'];
+            $("#showVirustotal").modal("show");
+            break;
+          default:
+            break;
+        }
+      },
+      error: function (error) {
+        console.log(error);
+        $('#proc-error-message').html("Virustotal analysis error");
+        $('.toast-proc-error').toast('show');
+      },
+      cache: false,
+      contentType: false,
+      processData: false
+    });
   }
 
 </script>

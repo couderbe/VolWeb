@@ -7,5 +7,6 @@ urlpatterns = [
     path('delete_rule/', views.delete_rule, name='delete_rule'),
     path('toggle_rule/', views.toggle_rule, name='toggle_rule'),
     path('download_rule/', views.download_rule, name='download_rule'),
-    path('virustotal/', views.virustotal, name='virustotal'),
+    path('virustotal_file/', views.virustotal_file, name='virustotal_file'),
+    path('virustotal_process/', views.virustotal_process, name='virustotal_process'),
 ]

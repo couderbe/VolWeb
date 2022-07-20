@@ -4,15 +4,15 @@ from django.contrib.auth.decorators import login_required
 from django.http import FileResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.contrib import messages
-from analyser.models import VirustotalAnalysis
+from analyser.models import VirustotalAnalysis, VirustotalAnalysisFile, VirustotalAnalysisProcess
 from analyser.rules import run_rules
 from analyser.tasks import get_file_related_to_analysis, get_widget_url, is_filescan_done, virustotal_filescan
 from investigations.forms import ManageInvestigation
 from analyser.forms import *
 import os
 from investigations.models import UploadInvestigation
-from investigations.tasks import dump_memory_file
-from windows_engine.models import FileDump, FileScan
+from investigations.tasks import dump_memory_file, dump_memory_pid
+from windows_engine.models import FileDump, FileScan, ProcessDump, PsScan
 
 
 @login_required
@@ -96,14 +96,14 @@ def toggle_rule(request):
 
 
 @login_required
-def virustotal(request):
+def virustotal_file(request):
     """Virustotal analysis
 
         Arguments:
         request : http request object
 
         Comments:
-        Start analysis with virustotal.
+        Start analysis with virustotal for a file
         If the analysis is already running show status.
         If the analysis is done show results
         """
@@ -112,7 +112,7 @@ def virustotal(request):
         if form.is_valid():
             id = form.cleaned_data['id']
             file = FileScan.objects.get(pk=id)
-            virustotal_analysis = VirustotalAnalysis.objects.filter(
+            virustotal_analysis = VirustotalAnalysisFile.objects.filter(
                 filescan__pk=id)
             filedump = FileDump.objects.filter(
                     offset=file.Offset, case_id=file.investigation.id)
@@ -136,41 +136,75 @@ def virustotal(request):
 
                 # Save results
                 ongoing = (result["data"]["type"] == "analysis")
-                virustotal_analysis = VirustotalAnalysis.objects.create(filescan=file, result=result,analysisId=result["data"]["id"],ongoing=ongoing)
+                virustotal_analysis = VirustotalAnalysisFile.objects.create(filescan=file, result=result,analysisId=result["data"]["id"],ongoing=ongoing)
             else:
                 virustotal_analysis = virustotal_analysis[0]
                 if virustotal_analysis.ongoing:
-                    res = is_filescan_done.delay(virustotal_analysis.analysisId)
-                    is_done = res.get()
-                    if is_done:
-                        virustotal_analysis.ongoing = False
-                        file_res = get_file_related_to_analysis.delay(virustotal_analysis.analysisId)
-                        result = file_res.get()
-                        virustotal_analysis.result = result
-                        virustotal_analysis.analysisId = result["data"]["id"]
-                        virustotal_analysis.save(update_fields=["result","ongoing"])
-                    else:
-                        result = virustotal_analysis.result
+                    result = virustotal_analysis.manageOngoing()
                 else:
                     result = virustotal_analysis.result
             widget_url = ""
             if not(virustotal_analysis.ongoing):
-                delta = datetime.now().timestamp() - virustotal_analysis.widgetDate.timestamp()
-                delta = delta/3600
-                if delta > 70 or virustotal_analysis.widgetUrl == "":
-                    widget_res = get_widget_url.delay(virustotal_analysis.analysisId)
-                    widget_url = widget_res.get()
-                    virustotal_analysis.widgetDate = datetime.now()
-                    virustotal_analysis.widgetUrl = widget_url
-                    virustotal_analysis.save(update_fields=["widgetDate","widgetUrl"])
-                else:
-                    widget_url = virustotal_analysis.widgetUrl
+                widget_url = virustotal_analysis.manageDone()
             return JsonResponse({'message': result,'url':widget_url})
         else:
-            print("invalid")
-            # TODO Show error on toast
             return JsonResponse({'message': "error"})
 
+
+@login_required
+def virustotal_process(request):
+    """Virustotal analysis
+
+        Arguments:
+        request : http request object
+
+        Comments:
+        Start analysis with virustotal for a file
+        If the analysis is already running show status.
+        If the analysis is done show results
+        """
+    if request.method == "POST":
+        form = VirustotalForm(request.POST)
+        if form.is_valid():
+            id = form.cleaned_data['id']
+            ps = PsScan.objects.get(pk=id)
+            virustotal_analysis = VirustotalAnalysisProcess.objects.filter(
+                processScan__pk=id)
+            process_dump = ProcessDump.objects.filter(
+                    pid=ps.PID, case_id=ps.investigation.id)
+            if len(virustotal_analysis) == 0:
+                if len(process_dump) == 0:
+                    task_res = dump_memory_pid.delay(
+                        str(ps.investigation.id), ps.PID)
+                    filename = task_res.get()
+                    if filename == "ERROR":
+                        return JsonResponse({'message': "failed to dump file"})
+                    ProcessDump.objects.create(case_id=UploadInvestigation.objects.filter(
+                        id=ps.investigation.id)[0], pid=ps.PID, filename=filename)
+                    process_dump = ProcessDump.objects.filter(
+                        pid=ps.PID, case_id=ps.investigation.id)
+                # Do the analysis
+                case_path = 'Cases/Results/file_dump_' + \
+                    str(ps.investigation.id)
+                scan_res = virustotal_filescan.delay(
+                    case_path+"/"+process_dump[0].filename)
+                result = scan_res.get()
+
+                # Save results
+                ongoing = (result["data"]["type"] == "analysis")
+                virustotal_analysis = VirustotalAnalysisProcess.objects.create(processScan=ps, result=result,analysisId=result["data"]["id"],ongoing=ongoing)
+            else:
+                virustotal_analysis = virustotal_analysis[0]
+                if virustotal_analysis.ongoing:
+                    result = virustotal_analysis.manageOngoing()
+                else:
+                    result = virustotal_analysis.result
+            widget_url = ""
+            if not(virustotal_analysis.ongoing):
+                widget_url = virustotal_analysis.manageDone()
+            return JsonResponse({'message': result,'url':widget_url})
+        else:
+            return JsonResponse({'message': "error"})
 
 @login_required
 def download_rule(request):
