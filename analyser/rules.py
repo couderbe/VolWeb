@@ -37,6 +37,31 @@ def fields_to_query(request: 'list[dict[str,str]]') -> Q:
         query &= sub_query
     return query
 
+def difference(q1: QuerySet, q2: QuerySet, fields: 'list[dict]') -> QuerySet:
+    result = q1
+    for elt in q2:
+        # Generate arguments from desired comparaison fields
+        args = {}
+        for field in fields:
+            for key,val in field.items():
+                args.update({key:getattr(elt,val)})
+        result = result.exclude(**args)
+    return result
+
+#TODO Test me
+def intersection(q1: QuerySet, q2: QuerySet, fields: 'list[dict]') -> QuerySet:
+    result = q1
+    for elt in q1:
+        # Generate arguments from desired comparaison fields
+        args = {}
+        for field in fields:
+            for key,val in field.items():
+                args.update({key:getattr(elt,val)})
+
+        if len(q2.filter(**args)) == 0:
+            result = result.exclude(**args)
+    return result
+
 
 @keyword
 def selection(data: dict, invest_id: int) -> 'tuple(QuerySet, dict)':
@@ -67,10 +92,9 @@ def intersect(data: dict, invest_id: int) -> 'tuple(QuerySet, dict)':
     query_set_1, _ = selection(data["selection1"], invest_id)
     query_set_2, _ = selection(data["selection2"], invest_id)
     if data["not"]:
-        result = query_set_1.difference(query_set_2)
+        result = difference(query_set_1,query_set_2,data['fields'])
     else:
-        result = query_set_1.intersection(query_set_2)
-    print(result)
+        result = intersection(query_set_1,query_set_2,data['fields'])
     return result, {}
 
 
