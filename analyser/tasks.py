@@ -1,4 +1,5 @@
 import json
+import subprocess
 from investigations.celery import app
 import hashlib
 import requests
@@ -90,3 +91,18 @@ def get_widget_url(id: str) -> str:
 
     response = requests.get(url, headers=headers)
     return json.loads(response.text)["data"]["url"]
+
+@app.task(name="clamav_file")
+def clamav_file(filepath):
+    try:
+        output = subprocess.check_output(['clamdscan', '-v','--fdpass', '--stream', filepath],timeout=120)
+        return (False,"")
+    except subprocess.CalledProcessError as e:
+        if e.returncode == 1:
+            return (True,e.output.decode().splitlines()[0].split(" ")[1])
+        elif e.returncode == 2:
+            return (True,"Unable to check for viruses")
+
+    except Exception as e:
+        return (True,"Unable to check for viruses. Unknown Error")
+    

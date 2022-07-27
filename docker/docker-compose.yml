@@ -67,9 +67,21 @@ services:
       - cases:/home/app/web/Cases/
       - staticfiles:/home/app/web/staticfiles
       - symbols:/home/app/web/symbols/uploads
+
+  clamav:
+    container_name: clamav
+    image: clamav/clamav:stable_base
+    ports:
+      - 3310:3310
+    expose:
+      - 3310
+    volumes:
+      - clam_db:/var/lib/clamav
+      
 volumes:
   postgres-data:
   staticfiles:
   cases:
   symbols:
   rules:
+  clam_db:
