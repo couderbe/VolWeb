@@ -419,3 +419,41 @@ function Virustotal(pk,url) {
     processData: false
   });
 }
+
+function ClamAV(id,model,url) {
+  const csrf = document.getElementsByName('csrfmiddlewaretoken');
+  const fd = new FormData();
+  fd.append('csrfmiddlewaretoken', csrf[0].value);
+  fd.append('id', id);
+  fd.append('model', model);
+  $.ajax({
+    type: 'POST',
+    url: url,
+    enctype: 'multipart/form-data',
+    data: fd,
+    beforeSend: function () {
+      $('#proc-message').html("Your ClamAV request was taken into account");
+      $('.toast-proc').toast('show');
+    },
+    success: function (response) {
+      console.log(response['message']);
+      if(response['message'][0]){
+        document.querySelector('#clamAVModalContent').style.color = "red"
+        document.querySelector('#clamAVModalContent').innerHTML = response['message'][1];
+      }
+      else{
+        document.querySelector('#clamAVModalContent').innerHTML = "Nothing detected";
+        document.querySelector('#clamAVModalContent').style.color = "black"
+      }
+      $("#showClamAVModal").modal("show");
+    },
+    error: function (error) {
+      console.log(error);
+      $('#proc-error-message').html("ClamAV analysis error");
+      $('.toast-proc-error').toast('show');
+    },
+    cache: false,
+    contentType: false,
+    processData: false
+  });
+}

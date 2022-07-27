@@ -6,7 +6,7 @@ from django.shortcuts import redirect, render
 from django.contrib import messages
 from analyser.models import VirustotalAnalysis, VirustotalAnalysisDll, VirustotalAnalysisFile, VirustotalAnalysisProcess
 from analyser.rules import run_rules
-from analyser.tasks import get_file_related_to_analysis, get_widget_url, is_filescan_done, virustotal_filescan
+from analyser.tasks import clamav_file, get_file_related_to_analysis, get_widget_url, is_filescan_done, virustotal_filescan
 from investigations.forms import ManageInvestigation
 from analyser.forms import *
 import os
@@ -115,7 +115,7 @@ def virustotal_file(request):
             virustotal_analysis = VirustotalAnalysisFile.objects.filter(
                 filescan__pk=id)
             filedump = FileDump.objects.filter(
-                    offset=file.Offset, case_id=file.investigation.id)
+                offset=file.Offset, case_id=file.investigation.id)
             if len(virustotal_analysis) == 0:
                 if len(filedump) == 0:
                     task_res = dump_memory_file.delay(
@@ -136,7 +136,8 @@ def virustotal_file(request):
 
                 # Save results
                 ongoing = (result["data"]["type"] == "analysis")
-                virustotal_analysis = VirustotalAnalysisFile.objects.create(filescan=file, result=result,analysisId=result["data"]["id"],ongoing=ongoing)
+                virustotal_analysis = VirustotalAnalysisFile.objects.create(
+                    filescan=file, result=result, analysisId=result["data"]["id"], ongoing=ongoing)
             else:
                 virustotal_analysis = virustotal_analysis[0]
                 if virustotal_analysis.ongoing:
@@ -146,7 +147,7 @@ def virustotal_file(request):
             widget_url = ""
             if not(virustotal_analysis.ongoing):
                 widget_url = virustotal_analysis.manageDone()
-            return JsonResponse({'message': result,'url':widget_url})
+            return JsonResponse({'message': result, 'url': widget_url})
         else:
             return JsonResponse({'message': "error"})
 
@@ -171,7 +172,7 @@ def virustotal_process(request):
             virustotal_analysis = VirustotalAnalysisProcess.objects.filter(
                 processScan__pk=id)
             process_dump = ProcessDump.objects.filter(
-                    pid=ps.PID, case_id=ps.investigation.id)
+                pid=ps.PID, case_id=ps.investigation.id)
             if len(virustotal_analysis) == 0:
                 if len(process_dump) == 0:
                     task_res = dump_memory_pid.delay(
@@ -192,7 +193,8 @@ def virustotal_process(request):
 
                 # Save results
                 ongoing = (result["data"]["type"] == "analysis")
-                virustotal_analysis = VirustotalAnalysisProcess.objects.create(processScan=ps, result=result,analysisId=result["data"]["id"],ongoing=ongoing)
+                virustotal_analysis = VirustotalAnalysisProcess.objects.create(
+                    processScan=ps, result=result, analysisId=result["data"]["id"], ongoing=ongoing)
             else:
                 virustotal_analysis = virustotal_analysis[0]
                 if virustotal_analysis.ongoing:
@@ -202,9 +204,10 @@ def virustotal_process(request):
             widget_url = ""
             if not(virustotal_analysis.ongoing):
                 widget_url = virustotal_analysis.manageDone()
-            return JsonResponse({'message': result,'url':widget_url})
+            return JsonResponse({'message': result, 'url': widget_url})
         else:
             return JsonResponse({'message': "error"})
+
 
 @login_required
 def virustotal_dll(request):
@@ -233,7 +236,8 @@ def virustotal_dll(request):
 
                 # Save results
                 ongoing = (result["data"]["type"] == "analysis")
-                virustotal_analysis = VirustotalAnalysisDll.objects.create(dllList=dll, result=result,analysisId=result["data"]["id"],ongoing=ongoing)
+                virustotal_analysis = VirustotalAnalysisDll.objects.create(
+                    dllList=dll, result=result, analysisId=result["data"]["id"], ongoing=ongoing)
             else:
                 virustotal_analysis = virustotal_analysis[0]
                 if virustotal_analysis.ongoing:
@@ -243,9 +247,10 @@ def virustotal_dll(request):
             widget_url = ""
             if not(virustotal_analysis.ongoing):
                 widget_url = virustotal_analysis.manageDone()
-            return JsonResponse({'message': result,'url':widget_url})
+            return JsonResponse({'message': result, 'url': widget_url})
         else:
             return JsonResponse({'message': "error"})
+
 
 @login_required
 def download_rule(request):
@@ -274,5 +279,52 @@ def download_rule(request):
                 messages.add_message(
                     request, messages.ERROR, 'Failed to fetch the requested file')
 
+        else:
+            return JsonResponse({'message': "error"})
+
+
+@login_required
+def clamAV(request):
+    """ClamAV analysis
+
+        Arguments:
+        request : http request object
+
+        Comments:
+        Start analysis with clamAV for a file and show results
+        """
+    if request.method == "POST":
+        form = ClamAVForm(request.POST)
+        if form.is_valid():
+            id = form.cleaned_data['id']
+            model = form.cleaned_data['model']
+            if model == "DllList":
+                dll = DllList.objects.get(pk=id)
+                # Do the analysis
+                dll_path = f'Cases/Results/dll_dump_{str(dll.process.investigation.id)}/{dll.File_output}'
+                scan_res = clamav_file.delay(dll_path)
+                result = scan_res.get()
+            else:
+                MODELS = {"PsScan": (PsScan, ProcessDump, "PID", "pid", dump_memory_pid, 'Cases/Results/process_dump_'),
+                        "FileScan": (FileScan, FileDump, "Offset", "offset", dump_memory_file, 'Cases/Results/file_dump_')}
+                scan_model, dump_model, comparaison_field_name_scan, comparaison_field_name_dump, dump_function, dump_path = MODELS[
+                    model]
+                scan_object = scan_model.objects.get(pk=id)
+                filter_dict = {"case_id": scan_object.investigation,
+                            comparaison_field_name_dump: getattr(scan_object, comparaison_field_name_scan)}
+                dump_object = dump_model.objects.filter(**filter_dict)
+                if len(dump_object) == 0:
+                    dump_res = dump_function.delay(
+                        str(scan_object.investigation.id), getattr(scan_object, comparaison_field_name_scan))
+                    filename = dump_res.get()
+                    filter_dict["filename"] = filename
+                    dump_model.objects.create(**filter_dict)
+                    dump_object = dump_model.objects.filter(**filter_dict)
+                # Do the analysis
+                case_path = dump_path + str(scan_object.investigation.id)
+                scan_res = clamav_file.delay(case_path+"/"+dump_object[0].filename)
+                result = scan_res.get()
+            print(result)
+            return JsonResponse({'message': result})
         else:
             return JsonResponse({'message': "error"})

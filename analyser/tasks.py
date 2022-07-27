@@ -96,8 +96,12 @@ def get_widget_url(id: str) -> str:
 def clamav_file(filepath):
     try:
         output = subprocess.check_output(['clamdscan', '-v','--fdpass', '--stream', filepath],timeout=120)
+        print(output)
         return (False,"")
     except subprocess.CalledProcessError as e:
+        print(e.cmd)
+        print(e.output)
+        print(e.stderr)
         if e.returncode == 1:
             return (True,e.output.decode().splitlines()[0].split(" ")[1])
         elif e.returncode == 2:

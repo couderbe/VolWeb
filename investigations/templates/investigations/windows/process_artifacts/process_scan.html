@@ -51,8 +51,10 @@
             onclick="event.stopPropagation(); DllList('{{case.id}}','{{process.pk}}');">Dll List</a>
           <a class="btn border border-light btn-sm" role="button"
             onclick="event.stopPropagation(); Handles('{{case.id}}','{{process.pk}}');">Handles List</a>
-            <a class="btn border border-light btn-sm" role="button"
+          <a class="btn border border-light btn-sm" role="button"
             onclick="event.stopPropagation(); Virustotal_process('{{process.pk}}');">Virustotal</a>
+          <a class="btn border border-light btn-sm" role="button"
+            onclick="event.stopPropagation(); ClamAV_process('{{process.pk}}','PsScan');">ClamAV</a>
         </td>
       </tr>
       {% endfor %}
@@ -127,6 +129,18 @@
                 Virustotal_dll(this.getAttribute("dll_id"));
               });
               cell.appendChild(btnVirustotal);
+
+              // ClamAV button generation
+              let btnClamAV = document.createElement("button");
+              btnClamAV.type = "button";
+              btnClamAV.class = "btn btn-dark border";
+              btnClamAV.innerHTML = "ClamAV";
+              btnClamAV.setAttribute("dll_id",dll['pk']);
+              btnClamAV.addEventListener("click",function () {
+                ClamAV_dll(this.getAttribute("dll_id"),"DllList");
+              });
+              cell.appendChild(btnClamAV);
+
             }
             else{
               let cell = row.insertCell();
@@ -255,4 +269,10 @@
     Virustotal(pk,"{% url 'virustotal_process' %}");
   }
 
+  function ClamAV_process(pk,model) {
+    ClamAV(pk,model,"{% url 'clamav' %}");
+  }
+  function ClamAV_dll(pk,model) {
+    ClamAV(pk,model,"{% url 'clamav' %}");
+  }
 </script>

@@ -26,3 +26,8 @@ class DownloadRuleForm(forms.Form):
 class VirustotalForm(forms.Form):
      id = forms.CharField(max_length=255, widget=forms.TextInput(attrs={
         'class': 'd-none','value':'n/a'}))
+
+class ClamAVForm(forms.Form):
+     id = forms.CharField(max_length=255, widget=forms.TextInput(attrs={
+        'class': 'd-none','value':'n/a'}))
+     model = forms.CharField(max_length=256)
