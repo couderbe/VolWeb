@@ -1,6 +1,13 @@
 from django.db import models
 from investigations.models import *
 
+class ClamAVFields(models.Model):
+    is_clamav_suspicious = models.BooleanField(default=False)
+    clamav_details = models.CharField(max_length=1024, default="Never analysed")
+
+    class Meta:
+        abstract = True
+
 class ProcessDump(models.Model):
     process_dump_id = models.AutoField(primary_key=True)
     case_id = models.ForeignKey(
@@ -67,7 +74,7 @@ class PsScan(models.Model):
     ExitTime = models.CharField(max_length = 255,null = True)
     Fileoutput = models.CharField(max_length = 255,null = True)
 
-class PsList(models.Model):
+class PsList(ClamAVFields):
     investigation = models.ForeignKey(
             UploadInvestigation,
             on_delete=models.CASCADE,
@@ -84,8 +91,6 @@ class PsList(models.Model):
     CreateTime = models.CharField(max_length = 255,null = True)
     ExitTime = models.CharField(max_length = 255,null = True)
     Fileoutput = models.CharField(max_length = 255,null = True)
-    is_clamav_suspicious = models.BooleanField(default=False)
-    clamav_details = models.CharField(max_length=1024, default="Never analysed")
 
 class CmdLine(models.Model):
     investigation = models.ForeignKey(
@@ -278,7 +283,7 @@ class RulesResult(models.Model):
         )
     result = models.JSONField()
 
-class DllList(models.Model):
+class DllList(ClamAVFields):
     process = models.ForeignKey(
             PsScan,
             on_delete=models.CASCADE,

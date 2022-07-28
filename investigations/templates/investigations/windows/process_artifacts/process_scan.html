@@ -104,6 +104,15 @@
           let body = document.querySelector('#dlllistBody');
           let row = body.insertRow();
           let fields = document.getElementsByClassName("dlllist_field");
+
+          // If the dll is suspicious turn the color to red and displau details in a tooltip
+          if(dll['fields']['is_clamav_suspicious']){
+            row.style.color = "red";
+            row.setAttribute("data-toggle","tooltip");
+            row.setAttribute("data-placement","bottom");
+            row.setAttribute("title",dll['fields']['clamav_details']);
+          }
+
           for(field of fields){
             if(field.innerHTML === "Actions"){
               // Download button generation

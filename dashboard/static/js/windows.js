@@ -432,6 +432,7 @@ function ClamAV(id,model,url) {
     enctype: 'multipart/form-data',
     data: fd,
     beforeSend: function () {
+      $('.spinner-main').show();
       $('#proc-message').html("Your ClamAV request was taken into account");
       $('.toast-proc').toast('show');
     },
@@ -446,11 +447,13 @@ function ClamAV(id,model,url) {
         document.querySelector('#clamAVModalContent').style.color = "black"
       }
       $("#showClamAVModal").modal("show");
+      $('.spinner-main').hide();
     },
     error: function (error) {
       console.log(error);
       $('#proc-error-message').html("ClamAV analysis error");
       $('.toast-proc-error').toast('show');
+      $('.spinner-main').hide();
     },
     cache: false,
     contentType: false,

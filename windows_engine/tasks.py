@@ -1,4 +1,5 @@
 import subprocess
+from analyser.tasks import clamav_file
 from investigations.celery import app
 import volatility3
 import os
@@ -27,7 +28,7 @@ def construct_plugin(context, plugin, dump_path, output_path="Cases/files"):
 
 
 @app.task(name="dlllist_task")
-def dlllist_task(case_id: int, id: int):
+def dlllist_task(case_id: int, id: int) -> None:
     process = windows_engine.models.PsScan.objects.filter(investigation_id = case_id, pk=id)[0]
     case = UploadInvestigation.objects.get(pk=case_id)
     path = 'Cases/' + case.existingPath
@@ -48,6 +49,9 @@ def dlllist_task(case_id: int, id: int):
         del res['Process']
         res['File_output'] = res['File output']
         del res['File output']
+        is_clamav_suspicious, clamav_details = clamav_file(output_path+"/"+res['File_output'])
+        res['is_clamav_suspicious'] = is_clamav_suspicious
+        res['clamav_details'] = clamav_details
         windows_engine.models.DllList.objects.create(process=process, **res)
 
 
