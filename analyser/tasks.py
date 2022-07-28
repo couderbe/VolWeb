@@ -93,7 +93,7 @@ def get_widget_url(id: str) -> str:
     return json.loads(response.text)["data"]["url"]
 
 @app.task(name="clamav_file")
-def clamav_file(filepath):
+def clamav_file(filepath: str) -> 'tuple[bool,str]':
     try:
         output = subprocess.check_output(['clamdscan', '-v','--fdpass', '--stream', filepath],timeout=120)
         print(output)

@@ -1,5 +1,6 @@
 from analyser.models import Analysis, Command, Connection, Dump, File, Process
 from analyser.rules import run_rules
+from analyser.tasks import clamav_file
 from investigations.models import *
 from iocs.models import IOC
 from investigations.celery import app
@@ -49,10 +50,31 @@ def windows_memory_analysis(dump_path,case):
         case.status = "2"
     case.save()
 
-    # Run rules detection
     logger.info("Running detection rules")
-    
     windows_engine.models.RulesResult.objects.create(investigation_id=case.id, result=run_rules(case.id))    
+
+    # Dump all processes for clamAV analysis if asked
+    if case.do_clamav:
+        logger.info("Dumping all processes from PsScan")
+        dump_path = "Cases/" + case.name
+        output_path = 'Cases/Results/process_dump_'+str(case.id)
+        try:
+            subprocess.check_output(['mkdir', output_path])
+        except:
+            pass
+        try:
+            result = dump_all_processes(dump_path, output_path)
+        except Exception as e:
+            print("Error processing memory dump ")
+        else:
+            logger.info("Scan all processes with clamAV")
+            for ps in result:
+                process_dump_object = windows_engine.models.ProcessDump.objects.create(case_id=case,pid=ps['PID'],filename=ps['File output'])
+                is_suspicious, details = clamav_file(output_path+"/"+ps['File output'])    
+                pslist_object = windows_engine.models.PsList.objects.get(investigation=case,PID=ps['PID'])
+                pslist_object.is_clamav_suspicious = is_suspicious
+                pslist_object.clamav_details = details
+                pslist_object.save()
 
     # Generate model for analyser
     #TODO Handle all cases

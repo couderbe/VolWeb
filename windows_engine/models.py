@@ -84,6 +84,8 @@ class PsList(models.Model):
     CreateTime = models.CharField(max_length = 255,null = True)
     ExitTime = models.CharField(max_length = 255,null = True)
     Fileoutput = models.CharField(max_length = 255,null = True)
+    is_clamav_suspicious = models.BooleanField(default=False)
+    clamav_details = models.CharField(max_length=1024, default="Never analysed")
 
 class CmdLine(models.Model):
     investigation = models.ForeignKey(

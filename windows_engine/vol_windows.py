@@ -98,6 +98,28 @@ def dump_process(dump_path, pid, output_path):
             for x, y in artifact.items()}
     return artifact['Fileoutput']
 
+def dump_all_processes(dump_path, output_path):
+    """Dump the process requested by the user"""
+    volatility3.framework.require_interface_version(2, 0, 0)
+    failures = volatility3.framework.import_files(plugins, True)
+    if failures:
+        logger.info(f"Some volatility3 plugin couldn't be loaded : {failures}")
+    else:
+        logger.info(f"Plugins are loaded without failure")
+    plugin_list = volatility3.framework.list_plugins()
+    base_config_path = "plugins"
+    context = contexts.Context()
+    context.config['plugins.PsList.dump'] = True
+    constructed = build_context(dump_path, context, base_config_path, plugin_list['windows.pslist.PsList'], output_path)
+    if constructed:
+        result = DictRenderer().render(constructed.run())
+    else:
+        logger.info("Error")
+    for artifact in result:
+        artifact = { x.translate({32:None}) : y
+            for x, y in artifact.items()}
+    return result
+
 def dump_file(dump_path, offset, output_path):
     """Dump the file requested by the user"""
     volatility3.framework.require_interface_version(2, 0, 0)

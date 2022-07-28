@@ -55,6 +55,7 @@ def newinvest(request):
             existingPath = request.POST['existingPath']
             end = request.POST['eof']
             nextSlice = request.POST['nextSlice']
+            do_clamav = (request.POST['do_clamav'] == 'true')
         else:
             return JsonResponse({'data': form.errors})
         if file=="" or fileName=="" or existingPath=="" or end=="" or nextSlice=="":
@@ -77,6 +78,7 @@ def newinvest(request):
                 FileFolder.eof = end
                 FileFolder.name = fileName
                 FileFolder.uid = uid
+                FileFolder.do_clamav = do_clamav
                 FileFolder.save()
                 if int(end):
                     res = JsonResponse({'data':'Uploaded Successfully','existingPath': fileName})

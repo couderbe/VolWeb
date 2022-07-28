@@ -20,7 +20,11 @@
       </thead>
       <tbody id="processList">
         {% for process in PsList %}
-        <tr>
+        {% if process.is_clamav_suspicious%}
+          <tr style="color: red;" data-toggle="tooltip" data-placement="bottom" title="{{process.clamav_details}}">
+        {% else %}
+          <tr>
+        {% endif %}
           <td>{{process.PID}}</td>
           <td>{{process.PPID}}</td>
           <td>{{process.ImageFileName}}</td>
