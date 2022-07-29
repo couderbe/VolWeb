@@ -1,0 +1,7 @@
+title: lsass Suspicious Handles number
+description: lsass.exe process shall have more than 200 handles
+selection:
+  module: PsScan
+  fields:
+    - ImageFileName: lsass.exe
+    - Handles__lt: 200

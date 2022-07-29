@@ -70,7 +70,7 @@ services:
 
   clamav:
     container_name: clamav
-    image: clamav/clamav:stable_base
+    image: clamav/clamav:stable
     ports:
       - 3310:3310
     expose:

@@ -1,5 +1,5 @@
 import json
-from typing import Callable
+from typing import Any, Callable
 import yaml
 from yaml.loader import SafeLoader
 from windows_engine.models import *
@@ -25,15 +25,26 @@ def filter(func: Callable) -> Callable:
     return func
 
 
-def fields_to_query(request: 'list[dict[str,str]]') -> Q:
+def fields_to_query(request: 'list[dict[str,Any]]') -> Q:
     query = Q()
     for elt in request:
         sub_query = Q()
-        for text in list(elt.values())[0].split("|"):
-            if (field := list(elt.keys())[0]).startswith("~"):
-                sub_query &= ~Q(**{field[1:]: text})
+        field_value = list(elt.values())[0]
+        field_name = list(elt.keys())[0]
+        if isinstance(field_value,str):
+            for text in field_value.split("|"):
+                if field_name.startswith("~"):
+                    sub_query &= ~Q(**{field_name[1:]: text})
+                else:
+                    sub_query |= Q(**{field_name: text})
+        elif isinstance(field_value,int):
+            if field_name.startswith("~"):
+                sub_query &= ~Q(**{field_name[1:]: field_value})
             else:
-                sub_query |= Q(**{field: text})
+                sub_query |= Q(**{field_name: field_value})
+        else:
+            print("Not supported field value type")
+            raise Exception
         query &= sub_query
     return query
 
@@ -170,6 +181,8 @@ def parse_rule(invest_id: int, path: str) -> tuple:
     for key, value in data.items():
         if key == "title":
             title = value
+        elif key == "description":
+            pass
         else:
             try:
                 result, artefacts = KEYWORD_TO_FUNCTION[key](

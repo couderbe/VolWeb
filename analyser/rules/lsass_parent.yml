@@ -1,0 +1,9 @@
+title: lsass Suspicious Parent Process
+description: lsass.exe process parent shall be winlogon.exe for Windows XP and wininit.exe for Windows Vista or higher
+selection:
+  module: PsScan
+  fields:
+    - ImageFileName: lsass.exe
+  filter:
+    parent:
+      - ~ImageFileName: wininit.exe|winlogon.exe
