@@ -6,7 +6,7 @@ from windows_engine.models import *
 from analyser.models import *
 import re
 from django.db.models.query import QuerySet
-from django.db.models import Q
+from django.db.models import Q,Count
 from windows_engine.tasks import dlllist_task, handles_task
 
 CONDITIONS = {}
@@ -163,6 +163,19 @@ def handles(data, args: 'list[dict[str,str]]', case_id: int) -> 'tuple(QuerySet,
             detection_artefacts.update({process.pk: list(handles.values())})
     return data, detection_artefacts
 
+@filter
+def count(data, args: 'list[dict[str,int]]', case_id: int) -> 'tuple(QuerySet, dict)':
+    comparaison_symbols = {"gt": ">", "gte": ">=", "lt": "<", "lte": "<=", "eq": "=="}
+    count = data.count()
+    for arg in args:
+        comparaison_symbol = list(arg.keys())[0]
+        if comparaison_symbol.startswith("~"):
+            if eval(f"count {comparaison_symbols[comparaison_symbol[1:]]} list(arg.values())[0]"):
+                data = data.none()
+        else:
+            if not(eval(f"count {comparaison_symbols[comparaison_symbol]} list(arg.values())[0]")):
+                data = data.none()
+    return data,{}
 
 def run_rules(invest_id: int) -> dict:
     output = []
