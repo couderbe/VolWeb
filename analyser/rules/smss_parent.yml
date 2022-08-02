@@ -1,0 +1,9 @@
+title: smss.exe Suspicious Parent Process
+description: smss.exe process parent shall be System
+selection:
+  module: PsScan
+  fields:
+    - ImageFileName: smss.exe
+  filter:
+    parent:
+      - ~ImageFileName: System

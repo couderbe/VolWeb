@@ -1,4 +1,4 @@
-title: lsass Only One Instance
+title: lsass.exe Only One Instance
 description: lsass.exe process shall exist in only one instance
 selection:
   module: PsScan

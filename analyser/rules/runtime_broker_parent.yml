@@ -1,0 +1,9 @@
+title: RuntimeBroker.exe Suspicious Parent Process
+description: RuntimeBroker.exe process parent shall be svchost.exe
+selection:
+  module: PsScan
+  fields:
+    - ImageFileName: RuntimeBroker.exe
+  filter:
+    parent:
+      - ~ImageFileName: svchost.exe

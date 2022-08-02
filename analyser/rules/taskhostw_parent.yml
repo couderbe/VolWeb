@@ -1,0 +1,9 @@
+title: taskhostw.exe Suspicious Parent Process
+description: taskhostw.exe process parent shall be svchost.exe
+selection:
+  module: PsScan
+  fields:
+    - ImageFileName: taskhostw.exe
+  filter:
+    parent:
+      - ~ImageFileName: svchost.exe
