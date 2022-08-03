@@ -1,10 +1,7 @@
-from json import dumps
 import json
+from django.core import serializers
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
-from analyser.elements.dump import Dump
-from analyser.elements.process import Process
-from analyser.elements.analysis import Analysis
 
 from investigations.models import UploadInvestigation
 from django.contrib.auth.decorators import login_required
@@ -18,21 +15,33 @@ import os
 from investigations.models import UploadInvestigation
 from investigations.tasks import dump_memory_file, dump_memory_pid
 from windows_engine.models import DllList, FileDump, FileScan, ProcessDump, PsScan
+from investigations.forms import *
 
+from analyser.models import *
 
 @login_required
 def analyser(request):
-    with open('Cases/Results/'+'12'+'.json') as f:
-        investData = json.load(f)
-    dmp = Dump("Example Memory Dump")
-    processes = [Process(name=elt['ImageFileName'],
-                         pid=elt['PID'], ppid=elt['PPID'], sessionId=elt['SessionId'], wow64=elt['Wow64'], createTime=elt['CreateTime'], exitTime=elt['ExitTime']) for elt in investData['psscan']]
-    dmp.children.extend(processes)
-    analysis = Analysis("Analyse")
-    analysis.loadDump(investData)
-    print([analysis.toDict()])
-    dataJSON = dumps([analysis.toDict()])
-    return render(request, 'analyser/analyser.html', {'data': dataJSON})
+    if request.method == 'GET':
+        form = ManageInvestigation(request.GET)
+        if form.is_valid():
+            case = form.cleaned_data['sa_case_id']
+            id = case.id
+            context = {}
+            context['case'] = case
+
+            #Models
+            models = {
+                'Analysis':serializers.serialize("json",Analysis.objects.filter(investigation_id = id)),
+                'Dump':serializers.serialize("json",Dump.objects.filter(investigation_id = id)),
+                'Process' : serializers.serialize("json",Process.objects.filter(investigation_id = id)),
+                'Command': serializers.serialize("json",Command.objects.filter(investigation_id = id)),
+                'Connection': serializers.serialize("json",Connection.objects.filter(investigation_id = id)),
+                'File': serializers.serialize("json",File.objects.filter(investigation_id = id)),
+            }
+            
+            context.update(models)
+            context = json.dumps(models)
+            return render(request, 'analyser/analyser.html',models)
 
 
 @login_required

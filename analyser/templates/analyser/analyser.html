@@ -1,125 +1,368 @@
-<!-- {% extends "dashboard/base.html" %}
+{% extends "dashboard/base.html" %}
 {% load static %}
-{% block content%} -->
-<script src="https://cdn.amcharts.com/lib/5/index.js"></script>
-<script src="https://cdn.amcharts.com/lib/5/hierarchy.js"></script>
-<script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
-<script src="https://cdn.amcharts.com/lib/5/themes/Responsive.js"></script>
+{% block content%}
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
 <link rel="stylesheet" href="{% static '/css/analyser.css' %}">
 
-<!-- <div class="sidebar" id="sidebar">
-    <a href="#">About</a>
-    <a href="#">Services</a>
-    <a href="#">Clients</a>
-    <a href="#">Contact</a>
+<div id="main">
+    <svg id="graph" preserveAspectRatio="xMinYMin meet">
+        <g class="links"></g>
+        <g class="nodes"></g>
+    </svg>
+    <div id="filter">
+        <fieldset>
+            <legend>Filters</legend>
+            <div>
+                <input class="filter-checkbox" type="checkbox" id="suspicious" name="suspicious">
+                <label for="suspicious">Suspicious Only</label>
+            </div>
 
-</div> -->
+            <div>
+                <input class="filter-checkbox" type="checkbox" id="commands" name="commands" checked>
+                <label for="commands">Commands</label>
+            </div>
+            <div>
+                <input class="filter-checkbox" type="checkbox" id="connections" name="connections" checked>
+                <label for="connections">Connections</label>
+            </div>
+        </fieldset>
+    </div>
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-head">
+            <img id="sidebar-icon" src="" alt="Icon" class="image" width="50">
+            <label id="name"></label>
+            <a href="javascript:void(0)" class="closebtn" onclick="closeSidebar()">&times;</a>
+        </div>
+        <table id="sidebar-table">
+        </table>
+    </div>
+</div>
 
 
-<div id="chartdiv"></div>
 
+{% csrf_token %}
 <script>
-    var data1 = [{
-        name: "Root",
-        children: [{
-            name: "A0",
-            children: [{
-                name: "A00",
-                value: 88
-            }, {
-                name: "A01",
-                value: 23
-            }, {
-                name: "A02",
-                value: 25
-            }]
-        }, {
-            name: "B0",
-            children: [{
-                name: "B10",
-                value: 62
-            }, {
-                name: "B11",
-                value: 4
-            }]
-        }, {
-            name: "C0",
-            children: [{
-                name: "C20",
-                value: 11
-            }, {
-                name: "C21",
-                value: 92
-            }, {
-                name: "C22",
-                value: 17
-            }]
-        }, {
-            name: "D0",
-            children: [{
-                name: "D30",
-                value: 95
-            }, {
-                name: "D31",
-                value: 84,
-            }, {
-                name: "D32",
-                value: 75
-            }]
-        }]
-    }];
+    var analysis = JSON.parse("{{Analysis|escapejs}}");
+    var dumps = JSON.parse("{{Dump|escapejs}}");
+    var processes = JSON.parse("{{Process|escapejs}}");
+    var commands = JSON.parse("{{Command|escapejs}}");
+    var connections = JSON.parse("{{Connection|escapejs}}");
+    var files = JSON.parse("{{File|escapejs}}");
+    const imgPath = "{% static '/images/analyser/' %}";
 
-    var data = JSON.parse("{{data|escapejs}}");
-    console.log(data)
-    const root = am5.Root.new("chartdiv");
-    root.setThemes([
-        am5themes_Animated.new(root),
-        am5themes_Responsive.new(root)
-    ]);
-    let container = root.container.children.push(
-        am5.Container.new(root, {
-            width: am5.percent(100),
-            height: am5.percent(100),
-            layout: root.verticalLayout,
-        })
-    );
-    let series = container.children.push(
-        am5hierarchy.Tree.new(root,
-            {
-                idField: "uid",
-                categoryField: "name",
-                childDataField: "children",
-                orientation: "vertical"
-            }
-        )
-    );
+    var svg = d3.select("#graph");
+    var nodesStore = [];
+    var linksStore = [];
 
-    series.nodes.template.setAll({ templateField: "template" });
-    series.setAll({ wheelable: true })
-    series.nodes.template.events.on("click", function (ev) {
-        console.log("Clicked on a node", ev.target);
-        console.log(ev.target.dataItem.dataContext);
-        console.log(ev.target.dataItem.dataContext['userData']);
-        // p = ev.target.dataItem.dataContext['userData'];
-        // $("sidebar").html('<ul id="test"></ul>');
-        // for (var key in p) {
-        //     if (p.hasOwnProperty(key)) {
-        //         console.log(key + " -> " + p[key]);
-        //         $("test").append("<li>" + key + " -> " + p[key] + "</li>");
-        //     }
+    function createNodes() {
+        // Create nodes from data
+        for (let node of analysis) {
+            nodesStore.push(node);
+        }
+        for (let node of dumps) {
+            nodesStore.push(node);
+        }
+        for (let node of processes) {
+            nodesStore.push(node);
+        }
+        for (let node of commands) {
+            nodesStore.push(node);
+        }
+        for (let node of connections) {
+            nodesStore.push(node);
+        }
+        // for (let node of files){
+        //     nodesStore.push(node);
         // }
+        for (let node of nodesStore) {
+            node['id'] = node['pk'];
+            delete node['pk'];
+        }
+
+        // Set nodes static attributes
+        var u = d3.select('.nodes')
+            .selectAll('image')
+            .data(nodesStore.filter(node => !node.filtered), function (d) { return d.id; })
+            .join('image')
+            .attr('height', 20)
+            .attr('width', 20)
+            .attr('href', function (d) {
+                let modelSplit = d.model.split(".");
+                let path = imgPath + modelSplit[1] + ".svg";
+                return path;
+            })
+            .call(drag(simulation))
+            .on("click", onNodeClicked);
+    }
+
+    function createLinks() {
+        //Create links from data
+        for (let i = 0; i < dumps.length; i++) {
+            for (let j = 0; j < analysis.length; j++) {
+                if (analysis[j].id === dumps[i].fields.analysis) {
+                    linksStore.push({ source: analysis[j].id, target: dumps[i].id })
+                }
+            }
+        }
+        for (let i = 0; i < processes.length; i++) {
+            for (let j = 0; j < dumps.length; j++) {
+                if (dumps[j].id === processes[i].fields.dump) {
+                    linksStore.push({ source: dumps[j].id, target: processes[i].id })
+                }
+            }
+        }
+        for (let command of commands) {
+            for (let proc of processes) {
+                if (proc.id === command.fields.process) {
+                    linksStore.push({ source: proc.id, target: command.id });
+                }
+            }
+        }
+
+        for (let connection of connections) {
+            for (let proc of processes) {
+                if (proc.id === connection.fields.process) {
+                    linksStore.push({ source: proc.id, target: connection.id });
+                }
+            }
+        }
+
+        for (let link of linksStore) {
+            let sourceNode = nodesStore.find(elem => elem['id'] === link.source);
+            let targetNode = nodesStore.find(elem => elem['id'] === link.target);
+            if (sourceNode.filtered || targetNode.filtered) {
+                link['filtered'] = true;
+            }
+            else {
+                link['filtered'] = false;
+            }
+        }
+
+        //Set links static attributes
+
+
+    }
+
+    function updateLinks() {
+        var u = d3.select('.links')
+            .selectAll('line')
+            .data(linksStore.filter(link => !link.filtered), function (d) { return d.id; })
+            .join('line')
+            .attr('x1', function (d) {
+                return d.source.x
+            })
+            .attr('y1', function (d) {
+                return d.source.y
+            })
+            .attr('x2', function (d) {
+                return d.target.x
+            })
+            .attr('y2', function (d) {
+                return d.target.y
+            })
+            .attr('stroke', "black")
+            .attr('stroke-opacity', 0.4);
+    }
+
+    function updateNodes() {
+        var u = d3.select('.nodes')
+            .selectAll('image')
+            .data(nodesStore.filter(node => !node.filtered), function (d) { return d.id; })
+            .join('image')
+            .attr('x', function (d) {
+                return d.x
+            })
+            .attr('y', function (d) {
+                return d.y
+            })
+            .call(drag(simulation));
+
+    }
+
+    function ticked() {
+        updateLinks();
+        updateNodes();
+    }
+
+    function setSidebar(data) {
+        console.log(data);
+        document.getElementById("sidebar-icon").setAttribute("src", imgPath + data.model.split(".")[1] + ".svg");
+        document.getElementById("name").innerHTML = data.id;
+        let table = document.getElementById("sidebar-table");
+        table.replaceChildren();
+        for (let [key, value] of Object.entries(data.fields)) {
+            let row = table.insertRow();
+            let th = document.createElement("td");
+            th.classList.add("key");
+            let text = document.createTextNode(key);
+            th.appendChild(text);
+            row.appendChild(th);
+            th = document.createElement("td");
+            th.classList.add("value");
+            text = document.createTextNode(value);
+            th.appendChild(text);
+            row.appendChild(th);
+        }
+    }
+
+    function onNodeClicked(d) {
+        setSidebar(d.target.__data__);
+        openSidebar();
+    }
+
+    // Drag on nodes function
+
+    function drag(simulation) {
+        function dragstarted(event) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            event.subject.fx = event.subject.x;
+            event.subject.fy = event.subject.y;
+        }
+
+        function dragged(event) {
+            event.subject.fx = event.x;
+            event.subject.fy = event.y;
+        }
+
+        function dragended(event) {
+            if (!event.active) simulation.alphaTarget(0);
+            event.subject.fx = null;
+            event.subject.fy = null;
+        }
+
+        return d3.drag()
+            .on("start", dragstarted)
+            .on("drag", dragged)
+            .on("end", dragended);
+    }
+
+    function openSidebar() {
+        document.getElementById("sidebar").style.width = "20em";
+        document.getElementById("main").style.marginRight = "20em";
+    }
+
+    function closeSidebar() {
+        document.getElementById("sidebar").style.width = "0";
+        document.getElementById("main").style.marginRight = "0";
+    }
+
+    // Activate Zoom
+
+    function handleZoom(e) {
+        d3.selectAll('#graph g')
+            .attr('transform', e.transform);
+    }
+
+    svg.call(d3.zoom().on('zoom', handleZoom));
+
+    createNodes();
+    createLinks();
+
+    var simulation = d3.forceSimulation(nodesStore)
+        .force('charge', d3.forceManyBody())
+        .force('center', d3.forceCenter(window.innerWidth / 2, window.innerHeight / 2))
+        .force("collide", d3.forceCollide().radius(function (d) {
+            return d.radius
+        }))
+        .force('link', d3.forceLink().links(linksStore).distance(200).id(function (d) { return d.id; }))
+        .on('tick', ticked);
+
+    function filter() {
+
+        let show_commands = document.getElementById("commands").checked;
+        let show_suspicious_only = document.getElementById("suspicious").checked;
+        let show_connections = document.getElementById("connections").checked;
+        let filtered_nodes = [];
+        for (let node of nodesStore) {
+            node["filtered"] = false;
+            if (!show_commands) {
+                if (node.model === "analyser.command") {
+                    node["filtered"] = true;
+                    filtered_nodes.push(node);
+                }
+            }
+
+            if (!show_connections) {
+                if (node.model === "analyser.connection") {
+                    node["filtered"] = true;
+                    filtered_nodes.push(node);
+                }
+            }
+
+            if (show_suspicious_only) {
+                if (!node["is_malicious"]) {
+                    node["filtered"] = true;
+                    filtered_nodes.push(node);
+                }
+            }
+
+        }
+        for (let link of linksStore) {
+            link.filtered = false;
+            if (filtered_nodes.some(node => node.id === link.source.id) || filtered_nodes.some(node => node.id === link.target.id)) {
+                link.filtered = true;
+            }
+        }
+
+        var u = d3.select('.nodes')
+            .selectAll('image')
+            .data(nodesStore.filter(node => !node.filtered), function (d) { return d.id; });
+        u.exit().remove();
+        u.enter().append('image')
+            .attr('height', 20)
+            .attr('width', 20)
+            .attr('href', function (d) {
+                let modelSplit = d.model.split(".");
+                let path = imgPath + modelSplit[1] + ".svg";
+                return path;
+            })
+            .attr('x', function (d) {
+                return d.x
+            })
+            .attr('y', function (d) {
+                return d.y
+            })
+            .call(drag(simulation))
+            .on("click", onNodeClicked);
+
+        var u = d3.select('.links')
+            .selectAll('line')
+            .data(linksStore.filter(link => !link.filtered), function (d) { return d.id; });
+
+        u.exit().remove();
+        u.enter().append('line')
+            .attr('x1', function (d) {
+                return d.source.x
+            })
+            .attr('y1', function (d) {
+                return d.source.y
+            })
+            .attr('x2', function (d) {
+                return d.target.x
+            })
+            .attr('y2', function (d) {
+                return d.target.y
+            })
+            .attr('stroke', "black")
+            .attr('stroke-opacity', 0.4);
+
+        ticked();
+    }
+
+    for (checkbox of document.getElementsByClassName("filter-checkbox")) {
+        checkbox.addEventListener('change', function (event) {
+            console.log("filter");
+            filter();
+        })
+    }
+
+    $(document).ready(function () {
+        $('.container').show();
+        $('.container-fluid').show();
+        $('.spinner-main').hide();
+        $('.main').show();
+        $('.svg').show();
     });
-
-    series.data.setAll(data);
-
-    // $(document).ready(function () {
-    //     $('.container').show();
-    //     $('chartdiv').show();
-    //     $('.container-fluid').show();
-    //     $('.spinner-main').hide();
-    // });
-
-    
-
 </script>
-<!-- {% endblock content %} -->
+{% endblock content %}

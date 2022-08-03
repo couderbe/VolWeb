@@ -1,7 +1,7 @@
 from django import forms
 from investigations.models import UploadInvestigation
 from windows_engine.models import ProcessDump, FileDump
-from django.forms import CheckboxInput, ModelForm, TextInput, Textarea, FileField, Select
+from django.forms import CheckboxInput, TextInput, Textarea, Select
 
 class UploadFileForm(forms.ModelForm):
     class Meta:

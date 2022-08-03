@@ -1,6 +1,6 @@
 from django.db import models
 from symbols.models import Symbols
-import datetime, base64
+import datetime
 #OS CHOICE
 CHOICES = (
         ('Windows', 'Windows'),

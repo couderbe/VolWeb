@@ -1,17 +1,14 @@
-from analyser.rules import run_rules
 from windows_engine.tasks import dlllist_task, handles_task
 from .tasks import start_memory_analysis, dump_memory_pid, app, dump_memory_file
 from django.http import HttpResponse, FileResponse, JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import get_user_model
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.core.serializers import serialize
-from celery.result import AsyncResult
 from django.contrib import messages
 import json, os, uuid
 from iocs.models import IOC
-from os.path import exists
 from investigations.models import *
 import windows_engine.models as windows_engine
 import linux_engine.models as linux_engine

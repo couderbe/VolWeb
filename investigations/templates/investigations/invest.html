@@ -124,6 +124,7 @@
 <script>
 /*Fetch the investigation details when the user click on one of the left panel analysis */
 function DisplayInvestigation(case_id){
+  console.log(case_id)
   $('.invest-card').removeClass("invest-selected");
   $(document.getElementById(case_id)).addClass("invest-selected");
   $('.spinner-invest').show();
@@ -157,6 +158,10 @@ function DisplayInvestigation(case_id){
                 <input type='hidden' name='sa_case_id' value='" + case_id + "'>\
                 <input class='btn border-sm border-light  btn-dark btn-sm' type='submit' style='margin-right: 10px;' value='Review results'>\
               </form>\
+              <form style='all: unset;' id='reviewform' action=\"{% url 'analyser' %}\" method='GET'>\
+                  <input type='hidden' name='sa_case_id' value='" + case_id + "'>\
+                  <input class='btn border-sm border-light  btn-dark btn-sm' type='submit' style='margin-right: 10px;' value='Investigate results'>\
+              </form>\
               <button class='btn border-sm border-light btn-dark btn-sm' type='button' style='margin-right: 10px;' onclick=StartAnalysis('" + case_id + "');>Restart Analysis</button>\
               <button class='btn btn-danger btn-sm' type='button' style='margin-right: 10px;'' onclick=DeleteAnalysis('" + case_id + "');>Delete Analysis</button>\
               ");
@@ -166,6 +171,10 @@ function DisplayInvestigation(case_id){
               <form style='all: unset;' id='reviewform' action=\"{% url 'reviewinvest' %}\" method='GET'>\
                 <input type='hidden' name='sa_case_id' value='" + case_id + "'>\
                 <input class='btn border-sm border-light btn-dark btn-sm' type='submit' style='margin-right: 10px;' value='Review results'>\
+              </form>\
+              <form style='all: unset;' id='reviewform' action=\"{% url 'analyser' %}\" method='GET'>\
+                  <input type='hidden' name='sa_case_id' value='" + case_id + "'>\
+                  <input class='btn border-sm border-light  btn-dark btn-sm' type='submit' style='margin-right: 10px;' value='Investigate results'>\
               </form>\
               <button class='btn border-sm border-light btn-dark btn-sm' type='button' style='margin-right: 10px;' onclick=StartAnalysis('" + case_id + "');>Restart Analysis</button>\
               <button class='btn btn-danger btn-sm' type='button' style='margin-right: 10px;'' onclick=DeleteAnalysis('" + case_id + "');>Delete Analysis</button>\

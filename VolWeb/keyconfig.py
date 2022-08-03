@@ -9,7 +9,7 @@ class Database:
 
 class Secrets:
     SECRET_KEY = os.getenv('DJANGO_SECRET','DevSecretKey')
-    BROKER_URL = os.getenv('BROKER_URL','amqp://admin:mypass@localhost:5672')
+    BROKER_URL = os.getenv('BROKER_URL','amqp://admin:mypass@rabbitmq3:5672')
 
 class Debug:
     DEBUG_MODE = os.getenv('DEBUG_MODE','True')
