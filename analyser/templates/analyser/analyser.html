@@ -15,12 +15,16 @@
             <legend>Filters</legend>
             <div>
                 <input class="filter-checkbox" type="checkbox" id="suspicious" name="suspicious">
-                <label for="suspicious">Suspicious</label>
+                <label for="suspicious">Suspicious Only</label>
             </div>
 
             <div>
                 <input class="filter-checkbox" type="checkbox" id="commands" name="commands" checked>
                 <label for="commands">Commands</label>
+            </div>
+            <div>
+                <input class="filter-checkbox" type="checkbox" id="connections" name="connections" checked>
+                <label for="connections">Connections</label>
             </div>
         </fieldset>
     </div>
@@ -62,10 +66,10 @@
         for (let node of processes) {
             nodesStore.push(node);
         }
-        for (let node of commands){
+        for (let node of commands) {
             nodesStore.push(node);
         }
-        for (let node of connections){
+        for (let node of connections) {
             nodesStore.push(node);
         }
         // for (let node of files){
@@ -108,18 +112,18 @@
                 }
             }
         }
-        for (let command of commands){
-            for (let proc of processes){
-                if(proc.id === command.fields.process){
-                    linksStore.push({ source: proc.id, target: command.id});
+        for (let command of commands) {
+            for (let proc of processes) {
+                if (proc.id === command.fields.process) {
+                    linksStore.push({ source: proc.id, target: command.id });
                 }
             }
         }
 
-        for (let connection of connections){
-            for (let proc of processes){
-                if(proc.id === connection.fields.process){
-                    linksStore.push({ source: proc.id, target: connection.id});
+        for (let connection of connections) {
+            for (let proc of processes) {
+                if (proc.id === connection.fields.process) {
+                    linksStore.push({ source: proc.id, target: connection.id });
                 }
             }
         }
@@ -265,9 +269,39 @@
 
     function filter() {
 
+        let show_commands = document.getElementById("commands").checked;
+        let show_suspicious_only = document.getElementById("suspicious").checked;
+        let show_connections = document.getElementById("connections").checked;
+        let filtered_nodes = [];
         for (let node of nodesStore) {
+            node["filtered"] = false;
+            if (!show_commands) {
+                if (node.model === "analyser.command") {
+                    node["filtered"] = true;
+                    filtered_nodes.push(node);
+                }
+            }
+
+            if (!show_connections) {
+                if (node.model === "analyser.connection") {
+                    node["filtered"] = true;
+                    filtered_nodes.push(node);
+                }
+            }
+
+            if (show_suspicious_only) {
+                if (!node["isSuspicious"]) {
+                    node["filtered"] = true;
+                    filtered_nodes.push(node);
+                }
+            }
+
         }
         for (let link of linksStore) {
+            link.filtered = false;
+            if (filtered_nodes.some(node => node.id === link.source.id) || filtered_nodes.some(node => node.id === link.target.id)) {
+                link.filtered = true;
+            }
         }
 
         var u = d3.select('.nodes')
@@ -311,10 +345,13 @@
             })
             .attr('stroke', "black")
             .attr('stroke-opacity', 0.4);
+
+        ticked();
     }
 
     for (checkbox of document.getElementsByClassName("filter-checkbox")) {
         checkbox.addEventListener('change', function (event) {
+            console.log("filter");
             filter();
         })
     }
