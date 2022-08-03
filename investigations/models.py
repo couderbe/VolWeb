@@ -26,6 +26,7 @@ class UploadInvestigation(models.Model):
     name = models.CharField(max_length=500)
     eof = models.BooleanField()
     uid = models.CharField(max_length=500)
+    do_clamav = models.BooleanField(default=False)
     def __str__(self):
         return str(self.title)
     def update_activity(self, *args, **kwargs):

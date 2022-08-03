@@ -1,0 +1,9 @@
+title: csrss.exe Least Two Instances
+description: csrss.exe process shall exist in at least two instances
+selection:
+  module: PsScan
+  fields:
+    - ImageFileName: csrss.exe
+  filter:
+    count:
+      - ~gte: 2

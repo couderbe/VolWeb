@@ -1,0 +1,9 @@
+title: lsaiso.exe One Or Zero Instances
+description: lsaiso.exe process shall exist in one or zero instance
+selection:
+  module: PsScan
+  fields:
+    - ImageFileName: lsaiso.exe
+  filter:
+    count:
+      - ~lte: 1

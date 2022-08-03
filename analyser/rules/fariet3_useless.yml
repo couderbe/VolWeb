@@ -1,0 +1,11 @@
+title: Useless fariet3
+selection:
+  module: PsScan
+  fields:
+    - ImageFileName: iexplore.exe
+  filter1:
+    parent:
+      - ImageFileName: svchost.exe
+  filter2:
+    dll:
+      - ~Path__regex: ^C:\\Windows\\.*$|^C:\\Program Files\\.*$

@@ -48,6 +48,7 @@
 
             <!-- Process Artifacts -->
             {% include "investigations/windows/process_artifacts/process_scan.html" %}
+            {% include "investigations/windows/process_artifacts/process_list.html" %}
             {% include "investigations/windows/process_artifacts/process_graph.html" %}
             {% include "investigations/windows/process_artifacts/process_privileges.html" %}
             {% include "investigations/windows/process_artifacts/process_cmdline.html" %}
@@ -75,6 +76,9 @@
             {% include "investigations/windows/ma_artifacts/ma_dumpprocess.html" %}
             {% include "investigations/windows/ma_artifacts/ma_dumpfile.html" %}
 
+            <!-- Detection -->
+            {% include "investigations/windows/detection/detection.html" %}
+            {% include "investigations/windows/detection/clamAVModal.html" %}
         </main>
       {% else %}
         {% include "investigations/linux/sidebar.html" %}

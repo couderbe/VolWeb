@@ -1,0 +1,6 @@
+title: test rule
+selection:
+  module: NetStat
+  fields:
+    - Owner: iexplore.exe|svchost.exe|wininit.exe
+    - State: LISTENING

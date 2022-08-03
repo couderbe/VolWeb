@@ -1,0 +1,9 @@
+title: services.exe Only One Instance
+description: services.exe process shall exist in only one instance
+selection:
+  module: PsScan
+  fields:
+    - ImageFileName: services.exe
+  filter:
+    count:
+      - ~eq: 1

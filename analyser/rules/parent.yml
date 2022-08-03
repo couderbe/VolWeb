@@ -1,0 +1,8 @@
+title: Suspicious childProcess
+selection:
+  module: PsScan
+  fields:
+    - ImageFileName: iexplore.exe
+  filter:
+    parent:
+      - ImageFileName: svchost.exe

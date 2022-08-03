@@ -86,6 +86,7 @@ class FileUpload {
         const investDesc = document.getElementById('id_description');
         const filefield = document.getElementById('fileupload');
         const uploadForm = document.getElementById('upload-form');
+        const do_clamav_checkbox = document.getElementById('id_do_clamav');
         uploadForm.classList.add('d-none');
         investName.innerHTML = "Investigation : " + title.value;
         investDesc.innerHTML = " OS Version : " + os_version.value;
@@ -116,6 +117,7 @@ class FileUpload {
         formData.append('os_version', os_version.value);
         formData.append('investigators', investigators.value);
         formData.append('uid', 'null');
+        formData.append('do_clamav', do_clamav_checkbox.checked);
         $.ajaxSetup({
             headers: {
                 "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value,

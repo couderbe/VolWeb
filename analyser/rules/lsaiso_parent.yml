@@ -1,0 +1,9 @@
+title: lsaiso.exe Suspicious Parent Process
+description: lsaiso.exe process parent shall be wininit.exe
+selection:
+  module: PsScan
+  fields:
+    - ImageFileName: lsaiso.exe
+  filter:
+    parent:
+      - ~ImageFileName: wininit.exe

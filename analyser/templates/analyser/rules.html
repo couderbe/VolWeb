@@ -1,0 +1,167 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+{% block content%}
+<div class="container d-flex flex-wrap justify-content-center">
+    <div class="d-flex align-items-center mt-3 mb-3 mb-lg-0 me-lg-auto">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" class="bi bi-bezier2"
+            viewBox="0 0 16 16">
+            <path fill-rule="evenodd"
+                d="M1 2.5A1.5 1.5 0 0 1 2.5 1h1A1.5 1.5 0 0 1 5 2.5h4.134a1 1 0 1 1 0 1h-2.01c.18.18.34.381.484.605.638.992.892 2.354.892 3.895 0 1.993.257 3.092.713 3.7.356.476.895.721 1.787.784A1.5 1.5 0 0 1 12.5 11h1a1.5 1.5 0 0 1 1.5 1.5v1a1.5 1.5 0 0 1-1.5 1.5h-1a1.5 1.5 0 0 1-1.5-1.5H6.866a1 1 0 1 1 0-1h1.711a2.839 2.839 0 0 1-.165-.2C7.743 11.407 7.5 10.007 7.5 8c0-1.46-.246-2.597-.733-3.355-.39-.605-.952-1-1.767-1.112A1.5 1.5 0 0 1 3.5 5h-1A1.5 1.5 0 0 1 1 3.5v-1zM2.5 2a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1zm10 10a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1z" />
+        </svg>
+        <code>Detection Rules</code>
+    </div>
+    <div class="col-12 col-lg-auto mt-3 mb-3 mb-lg-0">
+        <a href="{% url 'add_rule' %}" type="button" class="btn border-sm border-light btn-dark btn-sm">+ Add new
+            rule</a>
+    </div>
+    <div class="col-12 mt-3 mb-3 mb-lg-0" role="search">
+        <input type="search" id="searchRule" class="form-control" placeholder="Search for rules" aria-label="Search">
+    </div>
+</div>
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="table-responsive">
+                <table class="table table-light">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Operating system</th>
+                            <th>Enabled</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rulesTable">
+                        {% if rules %}
+                        {% for r in rules %}
+                        <tr>
+                            <td>{{r.title}}</td>
+                            <td>{{r.os}}</td>
+                            <td>{{r.enabled}}</td>
+                            <td>
+                                <a class="btn border border-light btn-sm" role="button"
+                                    onclick="Toggle('{{r.id}}')">Toggle</a>
+                                <a class="btn border border-light btn-sm" role="button"
+                                    onclick="Download('{{r.id}}')">Download</a>
+                                <a class="btn border border-light btn-danger btn-sm" role="button"
+                                    onclick="DeleteRule('{{r.id}}')">Delete</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% csrf_token %}
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('.container').show();
+        $('.container-fluid').show();
+        $('.spinner-main').hide();
+        //Rules search bar
+        $("#searchRule").on("keyup", function () {
+            var value = $(this).val().toLowerCase();
+            $("#rulesTable tr").filter(function () {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            });
+        });
+    });
+
+
+    function DeleteRule(id) {
+        const csrf = document.getElementsByName('csrfmiddlewaretoken');
+        const fd = new FormData();
+        fd.append('csrfmiddlewaretoken', csrf[0].value);
+        fd.append('rule_id', id);
+        $.ajax({
+            type: 'POST',
+            url: "{% url 'delete_rule' %}",
+            enctype: 'multipart/form-data',
+            data: fd,
+            beforeSend: function () {
+            },
+            success: function (response) {
+                location.reload();
+            },
+            error: function (error) {
+
+            },
+            cache: false,
+            contentType: false,
+            processData: false
+        });
+    }
+
+    function Toggle(id) {
+        const csrf = document.getElementsByName('csrfmiddlewaretoken');
+        const fd = new FormData();
+        fd.append('csrfmiddlewaretoken', csrf[0].value);
+        fd.append('rule_id', id);
+        $.ajax({
+            type: 'POST',
+            url: "{% url 'toggle_rule' %}",
+            enctype: 'multipart/form-data',
+            data: fd,
+            beforeSend: function () {
+            },
+            success: function (response) {
+                location.reload();
+            },
+            error: function (error) {
+
+            },
+            cache: false,
+            contentType: false,
+            processData: false
+        });
+    }
+
+    function Download(id){
+      const csrf = document.getElementsByName('csrfmiddlewaretoken');
+      const fd = new FormData();
+      let filename = "rule.yml"
+      fd.append('csrfmiddlewaretoken', csrf[0].value);
+      fd.append('id', id);
+      $.ajax({
+        type:'POST',
+        url: "{% url 'download_rule' %}",
+        enctype: 'multipart/form-data',
+        data: fd,
+        beforeSend: function(){
+          $('#proc-message').html("Requesting download...");
+          $('.toast-proc').toast('show');
+        },
+        success: function(data){
+          //Convert the Byte Data to BLOB object.
+                    var blob = new Blob([data], { type: "application/octetstream" });
+                    //Check the Browser type and download the File.
+                    var isIE = false || !!document.documentMode;
+                    if (isIE) {
+                        window.navigator.msSaveBlob(blob, filename);
+                    } else {
+                        var url = window.URL || window.webkitURL;
+                        link = url.createObjectURL(blob);
+                        var a = $("<a />");
+                        a.attr("download", filename);
+                        a.attr("href", link);
+                        $("body").append(a);
+                        a[0].click();
+                        $("body").remove(a);
+                    }
+        },
+        error: function(error){
+          $('#proc-error-message').html("Download failed ! :(");
+          $('.toast-proc-error').toast('show');
+        },
+        cache: false,
+        contentType : false,
+        processData: false
+      });
+  }
+
+</script>
+{% endblock content %}

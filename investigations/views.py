@@ -1,5 +1,7 @@
+from analyser.rules import run_rules
+from windows_engine.tasks import dlllist_task, handles_task
 from .tasks import start_memory_analysis, dump_memory_pid, app, dump_memory_file
-from django.http import StreamingHttpResponse, FileResponse, JsonResponse
+from django.http import HttpResponse, FileResponse, JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import get_user_model
@@ -53,6 +55,7 @@ def newinvest(request):
             existingPath = request.POST['existingPath']
             end = request.POST['eof']
             nextSlice = request.POST['nextSlice']
+            do_clamav = (request.POST['do_clamav'] == 'true')
         else:
             return JsonResponse({'data': form.errors})
         if file=="" or fileName=="" or existingPath=="" or end=="" or nextSlice=="":
@@ -75,6 +78,7 @@ def newinvest(request):
                 FileFolder.eof = end
                 FileFolder.name = fileName
                 FileFolder.uid = uid
+                FileFolder.do_clamav = do_clamav
                 FileFolder.save()
                 if int(end):
                     res = JsonResponse({'data':'Uploaded Successfully','existingPath': fileName})
@@ -257,6 +261,7 @@ def reviewinvest(request):
                     'dump_file_form': DumpFile(),
                     'download_file_form': DownloadFile(),
                     'form': DumpMemory(),
+                    'dl_dll_form': DownloadDll(),
                 }
                 #Models
                 models = {
@@ -264,6 +269,7 @@ def reviewinvest(request):
                     'files': windows_engine.FileDump.objects.filter(case_id = id),
                     'ImageSignature' : ImageSignature.objects.get(investigation_id = id),
                     'PsScan': windows_engine.PsScan.objects.filter(investigation_id = id),
+                    'PsList': windows_engine.PsList.objects.filter(investigation_id = id),
                     'PsTree': windows_engine.PsTree.objects.get(investigation_id = id),
                     'CmdLine': windows_engine.CmdLine.objects.filter(investigation_id = id),
                     'Privs': windows_engine.Privs.objects.filter(investigation_id = id),
@@ -281,6 +287,8 @@ def reviewinvest(request):
                     'Malfind' : windows_engine.Malfind.objects.filter(investigation_id = id),
                     'FileScan' : windows_engine.FileScan.objects.filter(investigation_id = id),
                     'Strings' : windows_engine.Strings.objects.filter(investigation_id = id),
+                    #'Detection': run_rules(id),
+                    'Detection': json.loads(windows_engine.RulesResult.objects.get(investigation_id= id).result),
                 }
                 context.update(forms)
                 context.update(models)
@@ -303,7 +311,7 @@ def reviewinvest(request):
 
 @login_required
 def dump_process(request):
-    """Dump a process
+    """Dump a process and do a virus scan
 
         Arguments:
         request : http request object
@@ -327,8 +335,8 @@ def dump_process(request):
                 Dump = form.save()
                 Dump.filename = file_path
                 Dump.save()
-                dumps = serialize("json",ProcessDump.objects.filter(process_dump_id = Dump.process_dump_id), fields=('pid','filename'))
-                return JsonResponse({'message': "success",'dumps': dumps })
+                dumps = serialize("json",ProcessDump.objects.filter(process_dump_id = Dump.process_dump_id), fields=('pid','filename','is_malicious','threat'))
+                return JsonResponse({'message': "success",'dumps': dumps})
             else:
                 return JsonResponse({'message': "failed"})
         else:
@@ -337,7 +345,7 @@ def dump_process(request):
 
 @login_required
 def dump_file(request):
-    """Dump a file
+    """Dump a file and do a virus scan
 
         Arguments:
         request : http request object
@@ -361,7 +369,7 @@ def dump_file(request):
                 Dump = form.save()
                 Dump.filename = file_path
                 Dump.save()
-                files = serialize("json",FileDump.objects.filter(file_dump_id = Dump.file_dump_id), fields=('offset','filename'))
+                files = serialize("json",FileDump.objects.filter(file_dump_id = Dump.file_dump_id), fields=('offset','filename','is_malicious','threat'))
                 return JsonResponse({'message': "success",'files': files })
             else:
                 return JsonResponse({'message': "failed"})
@@ -465,6 +473,85 @@ def download_file(request):
                     messages.add_message(request,messages.ERROR,'You can not download such file.')
             except:
                 messages.add_message(request,messages.ERROR,'Failed to fetch the requested file')
+
+        else:
+            return JsonResponse({'message': "error"})
+
+@login_required
+def dlllist(request):
+    """DllList
+        Arguments:
+        request : http request object
+        Comments:
+        Start analysis with dlllist module.
+        If the analysis is already running show status.
+        If the analysis is done show results
+        """
+    if request.method == "POST":
+        form = DllListForm(request.POST)
+        if form.is_valid():
+            id = form.cleaned_data['id']
+            case_id = form.cleaned_data['case_id']
+            dll_list = windows_engine.DllList.objects.filter(process__pk=id)
+            if len(dll_list) == 0:
+                worker = dlllist_task.delay(case_id, id)
+                worker.get()
+                dll_list = windows_engine.DllList.objects.filter(process__pk=id)
+            result = serialize('json',dll_list)
+            return JsonResponse({'message': result})
+        else:
+            print("invalid")
+            return JsonResponse({'message': "error"})
+
+@login_required
+def handles(request):
+    """Handles
+        Arguments:
+        request : http request object
+        Comments:
+        Start analysis with handles module.
+        If the analysis is already running show status.
+        If the analysis is done show results
+        """
+    if request.method == "POST":
+        form = HandlesForm(request.POST)
+        if form.is_valid():
+            id = form.cleaned_data['id']
+            case_id = form.cleaned_data['case_id']
+            handle_list = windows_engine.Handles.objects.filter(process__pk=id)
+            if len(handle_list) == 0:
+                worker = handles_task.delay(case_id, id)
+                worker.get()
+                handle_list = windows_engine.Handles.objects.filter(process__pk=id)
+            result = serialize('json',handle_list)
+            return JsonResponse({'message': result})
+        else:
+            print("invalid")
+            return JsonResponse({'message': "error"})
+
+
+@login_required
+def download_dll(request):
+    """Download a dll
+
+        Arguments:
+        request : http request object
+
+        Comment:
+        The user requested to download a dll.
+        Get the file and return it.
+        """
+    if request.method == 'POST':
+        form = DownloadDll(request.POST)
+        if form.is_valid():
+            dll_id = form.cleaned_data['id']
+            dll = windows_engine.DllList.objects.get(pk = dll_id)
+            dll_path = f'Cases/Results/dll_dump_{str(dll.process.investigation.id)}/{dll.File_output}'
+            try:
+                response = FileResponse(open(dll_path, 'rb'),as_attachment=True,filename=dll.File_output)
+                return response
+            except:
+                messages.add_message(request,messages.ERROR,'Failed to fetch the requested process')
 
         else:
             return JsonResponse({'message': "error"})

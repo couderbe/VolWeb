@@ -1,6 +1,13 @@
 from django.db import models
 from investigations.models import *
 
+class ClamAVFields(models.Model):
+    is_clamav_suspicious = models.BooleanField(default=False)
+    clamav_details = models.CharField(max_length=1024, default="Never analysed")
+
+    class Meta:
+        abstract = True
+
 class ProcessDump(models.Model):
     process_dump_id = models.AutoField(primary_key=True)
     case_id = models.ForeignKey(
@@ -54,6 +61,24 @@ class PsScan(models.Model):
             UploadInvestigation,
             on_delete=models.CASCADE,
             related_name="windows_psscan_investigation"
+        )
+    PID = models.BigIntegerField(null = True)
+    PPID = models.BigIntegerField(null = True)
+    ImageFileName = models.CharField(max_length = 255,null = True)
+    Offset = models.BigIntegerField(null = True)
+    Threads = models.BigIntegerField(null = True)
+    Handles = models.BigIntegerField(null = True)
+    SessionId = models.BigIntegerField(null = True)
+    Wow64 = models.BooleanField()
+    CreateTime = models.CharField(max_length = 255,null = True)
+    ExitTime = models.CharField(max_length = 255,null = True)
+    Fileoutput = models.CharField(max_length = 255,null = True)
+
+class PsList(ClamAVFields):
+    investigation = models.ForeignKey(
+            UploadInvestigation,
+            on_delete=models.CASCADE,
+            related_name="windows_pslist_investigation"
         )
     PID = models.BigIntegerField(null = True)
     PPID = models.BigIntegerField(null = True)
@@ -170,10 +195,11 @@ class Cachedump(models.Model):
             on_delete=models.CASCADE,
             related_name="windows_cachedump_investigation"
         )
-    username = models.TextField(null = True)
-    domain = models.TextField(null = True)
-    domain_name = models.TextField(null = True)
-    hash = models.TextField(null = True)
+    Domain = models.TextField(null = True)
+    Domainname = models.TextField(null = True)
+    Hash = models.TextField(null = True)
+    Username = models.TextField(null = True)
+
 
 class HiveList(models.Model):
     investigation = models.ForeignKey(
@@ -248,3 +274,36 @@ class Strings(models.Model):
     String = models.TextField(null = True)
     PhysicalAddress = models.BigIntegerField(null = True)
     Result = models.TextField(null = True)
+
+class RulesResult(models.Model):
+    investigation = models.ForeignKey(
+            UploadInvestigation,
+            on_delete=models.CASCADE,
+            related_name="windows_rules_investigation"
+        )
+    result = models.JSONField()
+
+class DllList(ClamAVFields):
+    process = models.ForeignKey(
+            PsScan,
+            on_delete=models.CASCADE,
+        )
+    PID = models.IntegerField()
+    Base = models.BigIntegerField()
+    Name = models.TextField()
+    Path = models.TextField()
+    Size = models.BigIntegerField()
+    LoadTime = models.CharField(max_length=255,null=True)
+    File_output = models.CharField(max_length=500)
+
+class Handles(models.Model):
+    process = models.ForeignKey(
+            PsScan,
+            on_delete=models.CASCADE,
+        )
+    PID = models.IntegerField()
+    Offset = models.BigIntegerField()
+    Name = models.TextField(null=True)
+    HandleValue = models.IntegerField()
+    GrantedAccess = models.BigIntegerField()
+    Type = models.CharField(max_length=255)

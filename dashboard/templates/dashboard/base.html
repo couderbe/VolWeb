@@ -53,6 +53,11 @@
                         active
                         {% endif %}
                         " href="{% url 'symbols' %}">Symbols</a></li>
+                      <li class="nav-item"><a class="nav-link text-dark
+                        {% if request.get_full_path == '/rules/'%}
+                        active
+                        {% endif %}
+                        " href="{% url 'rules' %}">Rules</a></li>
                 </ul>
             </div>
 

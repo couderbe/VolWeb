@@ -1,3 +1,17 @@
+<div class="modal fade" id="showProcessScanModal" tabindex="-1" aria-labelledby="showProcessScanModal" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content bg-light">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title" id="modal-title"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div id="processScanModalContent">
+        {% include "investigations/windows/process_artifacts/process_dlls.html" %}
+        {% include "investigations/windows/process_artifacts/process_handles.html" %}
+      </div>
+    </div>
+  </div>
+</div>
 <div class="mt-5 PsScan plugin">
   <h6 class="h6">Process Scan</h6>
   <div class="d-inline">
@@ -16,6 +30,7 @@
         <th scope="col">Wow64</th>
         <th scope="col">CreateTime</th>
         <th scope="col">ExitTime</th>
+        <th scope="col">Actions</th>
       </tr>
     </thead>
     <tbody id="processScan">
@@ -31,8 +46,242 @@
         <td>{{process.Wow64}}</td>
         <td>{{process.CreateTime}}</td>
         <td>{{process.ExitTime}}</td>
+        <td>
+          <a class="btn border border-light btn-sm" role="button"
+            onclick="event.stopPropagation(); DllList('{{case.id}}','{{process.pk}}');">Dll List</a>
+          <a class="btn border border-light btn-sm" role="button"
+            onclick="event.stopPropagation(); Handles('{{case.id}}','{{process.pk}}');">Handles List</a>
+          <a class="btn border border-light btn-sm" role="button"
+            onclick="event.stopPropagation(); Virustotal_process('{{process.pk}}');">Virustotal</a>
+          <a class="btn border border-light btn-sm" role="button"
+            onclick="event.stopPropagation(); ClamAV_process('{{process.pk}}','PsScan');">ClamAV</a>
+        </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
+
+<form id="dllFrom" action="{% url 'download_dll' %}" method="POST">
+  {{dl_dll_form.id}}
+</form>
+
+{% csrf_token %}
+
+<script>
+  var resultat = [];
+  // Hide all the elements of the modal
+  function hideModalContent() {
+    let content = $("#processScanModalContent .plugin");
+    for (elem of content){
+      elem.style.display = "none";
+    }
+  }
+
+  // Send ddllist request to the server
+  function DllList(case_id , pk) {
+    const csrf = document.getElementsByName('csrfmiddlewaretoken');
+    const fd = new FormData();
+    fd.append('csrfmiddlewaretoken', csrf[0].value);
+    fd.append('id', pk);
+    fd.append('case_id', case_id);
+    $.ajax({
+      type: 'POST',
+      url: "{% url 'dlllist' %}",
+      enctype: 'multipart/form-data',
+      data: fd,
+      beforeSend: function () {
+        $('.spinner-main').show();
+        $('#proc-message').html("Your DllList request was taken into account");
+        $('.toast-proc').toast('show');
+        $("#dlllistBody tr").remove();
+      },
+      success: function (response) {
+        hideModalContent();
+        document.getElementsByClassName("Dlllist")[0].style.display = "block";
+        document.getElementById("modal-title").innerHTML = "Dll List";
+        for( dll of JSON.parse(response['message'])){
+          let body = document.querySelector('#dlllistBody');
+          let row = body.insertRow();
+          let fields = document.getElementsByClassName("dlllist_field");
+
+          // If the dll is suspicious turn the color to red and displau details in a tooltip
+          if(dll['fields']['is_clamav_suspicious']){
+            row.style.color = "red";
+            row.setAttribute("data-toggle","tooltip");
+            row.setAttribute("data-placement","bottom");
+            row.setAttribute("title",dll['fields']['clamav_details']);
+          }
+
+          for(field of fields){
+            if(field.innerHTML === "Actions"){
+              // Download button generation
+              let btnDownload = document.createElement("button");
+              btnDownload.type = "button";
+              btnDownload.class = "btn btn-dark border";
+              btnDownload.innerHTML = "Download";
+              btnDownload.setAttribute("dll_id",dll['pk']);
+              btnDownload.addEventListener("click",function () {
+                let filename = $(this).closest("tr").find(".File_output").text();
+                DownloadDll(this.getAttribute("dll_id"),filename);
+              });
+              let cell = row.insertCell();
+              cell.appendChild(btnDownload);
+
+              // Virustotal button generation
+              let btnVirustotal = document.createElement("button");
+              btnVirustotal.type = "button";
+              btnVirustotal.class = "btn btn-dark border";
+              btnVirustotal.innerHTML = "Virustotal";
+              btnVirustotal.setAttribute("dll_id",dll['pk']);
+              btnVirustotal.addEventListener("click",function () {
+                Virustotal_dll(this.getAttribute("dll_id"));
+              });
+              cell.appendChild(btnVirustotal);
+
+              // ClamAV button generation
+              let btnClamAV = document.createElement("button");
+              btnClamAV.type = "button";
+              btnClamAV.class = "btn btn-dark border";
+              btnClamAV.innerHTML = "ClamAV";
+              btnClamAV.setAttribute("dll_id",dll['pk']);
+              btnClamAV.addEventListener("click",function () {
+                ClamAV_dll(this.getAttribute("dll_id"),"DllList");
+              });
+              cell.appendChild(btnClamAV);
+
+            }
+            else{
+              let cell = row.insertCell();
+              cell.innerHTML = dll['fields'][field.innerHTML];
+              cell.classList.add(field.innerHTML);
+            }
+          }
+          
+        }
+        $('.spinner-main').hide();
+        $("#showProcessScanModal").modal("show");
+      },
+      error: function (error) {
+        console.log(error);
+        $('.spinner-main').hide();
+        $('#proc-error-message').html("DllList request error");
+        $('.toast-proc-error').toast('show');
+      },
+      cache: false,
+      contentType: false,
+      processData: false
+    });
+  }
+
+  // Send handles request to the server
+  function Handles(case_id , pk) {
+    const csrf = document.getElementsByName('csrfmiddlewaretoken');
+    const fd = new FormData();
+    fd.append('csrfmiddlewaretoken', csrf[0].value);
+    fd.append('id', pk);
+    fd.append('case_id', case_id);
+    $.ajax({
+      type: 'POST',
+      url: "{% url 'handles' %}",
+      enctype: 'multipart/form-data',
+      data: fd,
+      beforeSend: function () {
+        $('.spinner-main').show();
+        $('#proc-message').html("Your Handles List request was taken into account");
+        $('.toast-proc').toast('show');
+        $("#handlesBody tr").remove();
+      },
+      success: function (response) {
+        hideModalContent();
+        document.getElementsByClassName("Handles")[0].style.display = "block";
+        document.getElementById("modal-title").innerHTML = "Handles List"
+        for( dll of JSON.parse(response['message'])){
+          let body = document.querySelector('#handlesBody');
+          let row = body.insertRow();
+          let fields = document.getElementsByClassName("handles_field");
+          for(field of fields){
+            let cell = row.insertCell();
+            cell.innerHTML = dll['fields'][field.innerHTML];
+          }   
+        }
+        $('.spinner-main').hide();
+        $("#showProcessScanModal").modal("show");
+      },
+      error: function (error) {
+        console.log(error);
+        $('.spinner-main').hide();
+        $('#proc-error-message').html("Handles request error");
+        $('.toast-proc-error').toast('show');
+      },
+      cache: false,
+      contentType: false,
+      processData: false
+    });
+  }
+
+  function DownloadDll(dll_pk,filename){
+      const csrf = document.getElementsByName('csrfmiddlewaretoken');
+      const fd = new FormData();
+      fd.append('csrfmiddlewaretoken', csrf[0].value);
+      fd.append('id', dll_pk);
+      $.ajax({
+        type:'POST',
+        url: "{% url 'download_dll' %}",
+        enctype: 'multipart/form-data',
+        data: fd,
+        beforeSend: function(){
+          $('#proc-message').html("Requesting download...");
+          $('.toast-proc').toast('show');
+        },
+        success: function(data){
+          //FIXME 
+          //Convert the Byte Data to BLOB object.
+                    console.log(typeof(data));
+                    console.log(data.length);
+                    const raw = new Uint8Array(data.length);
+                    for (let i = 0; i < data.length; i++){
+                      raw[i] = data[i].charCodeAt(0);
+                    }
+                    var blob = new Blob([raw], { type: "application/octet-stream" });
+                    console.log(blob);
+                    //Check the Browser type and download the File.
+                    var isIE = false || !!document.documentMode;
+                    if (isIE) {
+                        window.navigator.msSaveBlob(blob, filename);
+                    } else {
+                        var url = window.URL || window.webkitURL;
+                        link = url.createObjectURL(blob);
+                        var a = $("<a />");
+                        a.attr("download", filename);
+                        a.attr("href", link);
+                        $("body").append(a);
+                        a[0].click();
+                        $("body").remove(a);
+                    }
+        },
+        error: function(error){
+          $('#proc-error-message').html("Download failed ! :(");
+          $('.toast-proc-error').toast('show');
+        },
+        cache: false,
+        contentType : false,
+        processData: false
+      });
+  }
+  
+  function Virustotal_dll(pk) {
+    Virustotal(pk,"{% url 'virustotal_dll' %}");
+  }
+
+  function Virustotal_process(pk) {
+    Virustotal(pk,"{% url 'virustotal_process' %}");
+  }
+
+  function ClamAV_process(pk,model) {
+    ClamAV(pk,model,"{% url 'clamav' %}");
+  }
+  function ClamAV_dll(pk,model) {
+    ClamAV(pk,model,"{% url 'clamav' %}");
+  }
+</script>

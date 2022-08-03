@@ -1,0 +1,9 @@
+title: wininit.exe Only One Instance
+description: wininit.exe process shall exist in only one instance
+selection:
+  module: PsScan
+  fields:
+    - ImageFileName: wininit.exe
+  filter:
+    count:
+      - ~eq: 1

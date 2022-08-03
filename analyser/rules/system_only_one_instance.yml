@@ -1,0 +1,9 @@
+title: System Only One Instance
+description: System process shall exist in only one instance
+selection:
+  module: PsScan
+  fields:
+    - ImageFileName: System
+  filter:
+    count:
+      - ~eq: 1
