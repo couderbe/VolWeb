@@ -186,6 +186,7 @@
     }
 
     function setSidebar(data) {
+        console.log(data);
         document.getElementById("sidebar-icon").setAttribute("src", imgPath + data.model.split(".")[1] + ".svg");
         document.getElementById("name").innerHTML = data.id;
         let table = document.getElementById("sidebar-table");
