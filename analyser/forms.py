@@ -31,3 +31,8 @@ class ClamAVForm(forms.Form):
      id = forms.CharField(max_length=255, widget=forms.TextInput(attrs={
         'class': 'd-none','value':'n/a'}))
      model = forms.CharField(max_length=256)
+
+class get_model_objectForm(forms.Form):
+     model = forms.CharField(max_length=256)
+     field = forms.CharField(max_length=256)
+     object_id = forms.CharField(max_length=256)

@@ -5,12 +5,9 @@ import uuid
 import os
 from analyser.tasks import get_file_related_to_analysis, get_widget_url, is_filescan_done
 
-from windows_engine.models import CmdLine, DllList, FileScan, NetScan, PsScan
+from windows_engine.models import CmdLine, DllList, FileScan, NetScan, PsList, PsScan
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
-from celery import uuid
-from django.db import models
-import uuid
 
 CHOICES = (
     ('Windows', 'Windows'),
@@ -31,7 +28,6 @@ class Node(models.Model):
 class Analysis(Node):
     name = models.CharField(max_length=255, default="Undefined name")
 
-
 class Dump(Node):
     analysis = models.ForeignKey(Analysis, on_delete=models.CASCADE)
     md5 = models.CharField(max_length=32, null=True)
@@ -41,10 +37,7 @@ class Dump(Node):
 
 class Process(Node):
     dump = models.ForeignKey(Dump, on_delete=models.CASCADE)
-    ps_scan = models.ForeignKey(PsScan, on_delete=models.CASCADE)
-    is_malicious = models.BooleanField(default=False)
-    threat = models.CharField(max_length=500, default="")
-
+    ps_list = models.ForeignKey(PsList, on_delete=models.CASCADE, null=True)
 
 class Command(Node):
     process = models.ForeignKey(Process, on_delete=models.CASCADE)

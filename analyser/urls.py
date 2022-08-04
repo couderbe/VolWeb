@@ -11,4 +11,5 @@ urlpatterns = [
     path('virustotal_process/', views.virustotal_process, name='virustotal_process'),
     path('virustotal_dll/', views.virustotal_dll, name='virustotal_dll'),
     path('clamav/', views.clamAV, name='clamav'),
+    path('get_model_object/', views.get_model_object, name='get_model_object'),
 ]

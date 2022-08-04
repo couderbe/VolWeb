@@ -54,6 +54,8 @@
     var svg = d3.select("#graph");
     var nodesStore = [];
     var linksStore = [];
+    var hidden_fields = ["children", "investigation_id"]
+    var extensible_fields = ["ps_list", "cmdline", "netscan", "file", "dll"]
 
     function createNodes() {
         // Create nodes from data
@@ -185,13 +187,27 @@
         updateNodes();
     }
 
-    function setSidebar(data) {
-        console.log(data);
+    function sidebarTriggered(data) {
         document.getElementById("sidebar-icon").setAttribute("src", imgPath + data.model.split(".")[1] + ".svg");
         document.getElementById("name").innerHTML = data.id;
         let table = document.getElementById("sidebar-table");
         table.replaceChildren();
         for (let [key, value] of Object.entries(data.fields)) {
+            if (hidden_fields.some(field => field === key)) {
+                continue;
+            }
+            else if (extensible_fields.some(field => field === key)) {
+                get_object_details(data.model, key, data.id);
+            }
+            else {
+                insertValueIntoSidebar(key,value);
+            }
+        }
+    }
+
+    function insertValueIntoSidebar(key, value) {
+        let table = document.getElementById("sidebar-table");
+        if (!(typeof(value) === "object") || value === null){   
             let row = table.insertRow();
             let th = document.createElement("td");
             th.classList.add("key");
@@ -204,10 +220,43 @@
             th.appendChild(text);
             row.appendChild(th);
         }
+        else{
+            for(let [k, v] of Object.entries(value.fields)){
+                insertValueIntoSidebar(k, v);
+            }
+        }
+    }
+
+    function get_object_details(model_name, field, id) {
+        const csrf = document.getElementsByName('csrfmiddlewaretoken');
+        const fd = new FormData();
+        fd.append('csrfmiddlewaretoken', csrf[0].value);
+        fd.append('model', model_name);
+        fd.append('field', field);
+        fd.append('object_id', id);
+        let details;
+        $.ajax({
+            type: 'POST',
+            url: "{% url 'get_model_object' %}",
+            enctype: 'multipart/form-data',
+            data: fd,
+            beforeSend: function () {
+            },
+            success: function (response) {
+                result = JSON.parse(response)[0];
+                insertValueIntoSidebar(result.model,result);
+            },
+            error: function (error) {
+
+            },
+            cache: false,
+            contentType: false,
+            processData: false
+        });
     }
 
     function onNodeClicked(d) {
-        setSidebar(d.target.__data__);
+        sidebarTriggered(d.target.__data__);
         openSidebar();
     }
 

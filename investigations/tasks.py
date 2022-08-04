@@ -87,19 +87,19 @@ def windows_memory_analysis(dump_path,case):
     dump.save()
     analysis.children = json.dumps({'children': [str(dump.id)]})
     analysis.save()
-    psscan = PsScan.objects.filter(investigation_id = id)
-    for ps in psscan:
-        proc = Process(dump=dump,ps_scan=ps,investigation_id=id)
+    pslist = PsList.objects.filter(investigation_id = id)
+    for ps in pslist:
+        proc = Process(dump=dump,ps_list=ps,investigation_id=id)
         proc.save()
     commands = CmdLine.objects.filter(investigation_id  = id)
     for command in commands:
-        proc = Process.objects.filter(investigation_id = id, ps_scan__PID = command.PID,ps_scan__ImageFileName=command.Process)
+        proc = Process.objects.filter(investigation_id = id, ps_list__PID = command.PID,ps_list__ImageFileName=command.Process)
         if len(proc) > 1:
             print(command.Process)
             print(len(proc))
             for p in proc:
                 try:
-                    print(p.ps_scan.ImageFileName)
+                    print(p.ps_list.ImageFileName)
                 except Exception as e:
                     print(e)
         if len(proc) == 0:
@@ -112,7 +112,7 @@ def windows_memory_analysis(dump_path,case):
         f.save()
     connections = NetScan.objects.filter(investigation_id=id)
     for connection in connections:
-        proc = Process.objects.filter(investigation_id = id, ps_scan__PID = connection.PID)
+        proc = Process.objects.filter(investigation_id = id, ps_list__PID = connection.PID)
         if len(proc) == 0:
             print(connection.PID)
             print(connection.Owner)
@@ -138,59 +138,7 @@ def linux_memory_analysis(dump_path, case):
         case.status = "4"
     else:
         case.status = "2"
-    case.save()
-
-    # Generate model for analyser
-    id = case.id
-    analysis = Analysis(name=str(id),investigation_id=id)
-    analysis.save()
-    imageSignature = ImageSignature.objects.get(investigation_id = id)
-    dump = Dump(analysis=analysis,md5=imageSignature.md5,sha1=imageSignature.sha1,sha256=imageSignature.sha256,investigation_id=id)
-    dump.save()
-    analysis.children = json.dumps({'children': [str(dump.id)]})
-    analysis.save()
-    psscan = PsScan.objects.filter(investigation_id = id)
-    for ps in psscan:
-        proc = Process(dump=dump,ps_scan=ps,investigation_id=id)
-        proc.save()
-    commands = CmdLine.objects.filter(investigation_id  = id)
-    for command in commands:
-        proc = Process.objects.filter(investigation_id = id, ps_scan__PID = command.PID,ps_scan__ImageFileName=command.Process)
-        if len(proc) > 1:
-            print(command.Process)
-            print(len(proc))
-            for p in proc:
-                try:
-                    print(p.ps_scan.ImageFileName)
-                except Exception as e:
-                    print(e)
-        if len(proc) == 0:
-            print("No proc found")
-        cmd = Command(process=proc[0],cmdline=command,investigation_id=id)
-        cmd.save()
-    files = FileScan.objects.filter(investigation_id = id)
-    for file in files:
-        f = File(file=file,investigation_id = id)
-        f.save()
-    connections = NetScan.objects.filter(investigation_id=id)
-    for connection in connections:
-        proc = Process.objects.filter(investigation_id = id, ps_scan__PID = connection.PID)
-        if len(proc) == 0:
-            print(connection.PID)
-            print(connection.Owner)
-            print(connection.Proto)
-            # con = Connection(netscan=connection,investigation_id=id)
-            # con.save()
-        elif len(proc) == 1:
-            con = Connection(netscan=connection,process=proc[0],investigation_id=id)
-            con.save()
-        else:
-            print("More than 1")
-            print(connection)
-            print(len(proc))
-            for p in proc:
-                print(p)
-        
+    case.save()        
     return
 
 """Main Task"""

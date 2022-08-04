@@ -18,6 +18,7 @@ from windows_engine.models import DllList, FileDump, FileScan, ProcessDump, PsSc
 from investigations.forms import *
 
 from analyser.models import *
+from django.apps import apps
 
 @login_required
 def analyser(request):
@@ -324,7 +325,7 @@ def clamAV(request):
                 scan_res = clamav_file.delay(dll_path)
                 result = scan_res.get()
             else:
-                MODELS = {"PsScan": (PsScan, ProcessDump, "PID", "pid", dump_memory_pid, 'Cases/Results/process_dump_'),
+                MODELS = {"PsSc7an": (PsScan, ProcessDump, "PID", "pid", dump_memory_pid, 'Cases/Results/process_dump_'),
                           "FileScan": (FileScan, FileDump, "Offset", "offset", dump_memory_file, 'Cases/Results/file_dump_')}
                 scan_model, dump_model, comparaison_field_name_scan, comparaison_field_name_dump, dump_function, dump_path = MODELS[
                     model]
@@ -348,3 +349,22 @@ def clamAV(request):
             return JsonResponse({'message': result})
         else:
             return JsonResponse({'message': "error"})
+
+@login_required
+def get_model_object(request):
+    """Get fields of an object based on object id, object type and investigation id
+
+        Arguments:
+        request : http request object
+        """
+    if request.method == "POST":
+        form = get_model_objectForm(request.POST)
+        if form.is_valid():
+            app_name,model_name = form.cleaned_data['model'].split(".")
+            object_id = form.cleaned_data['object_id']
+            field = form.cleaned_data['field']
+            model = apps.get_model(app_name,model_name)
+            model_object = model.objects.get(pk=object_id)
+            field_object = getattr(model_object,field)
+            return JsonResponse(serializers.serialize('json', [field_object]),safe=False)
+    return JsonResponse({'message': "error"})
