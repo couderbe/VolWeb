@@ -297,6 +297,9 @@ class DllList(ClamAVFields):
     LoadTime = models.CharField(max_length=255,null=True)
     File_output = models.CharField(max_length=500)
 
+    def natural_key(self):
+        return (self.is_clamav_suspicious, self.clamav_details)
+
 class Handles(models.Model):
     process = models.ForeignKey(
             PsScan,

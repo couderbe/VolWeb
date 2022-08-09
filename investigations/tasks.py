@@ -1,8 +1,9 @@
-from analyser.models import Analysis, Command, Connection, Dump, File, Process
+from analyser.models import Analysis, Command, Connection, Dll, Dump, File, Process
 from analyser.rules import run_rules
 from analyser.tasks import clamav_file
 from investigations.models import *
 from analyser.models import Analysis, Command, Connection, Dump, File, Process
+from windows_engine.tasks import dlllist_task
 from .models import *
 from investigations.celery import app
 from windows_engine.vol_windows import *
@@ -77,6 +78,15 @@ def windows_memory_analysis(dump_path,case):
                 pslist_object.clamav_details = details
                 pslist_object.save()
 
+    # Dump all dlls is asked
+    if False:
+        processes = PsScan.objects.filter(investigation_id = case.id)
+        for ps in processes:
+            try:
+                dlllist_task(case.id, ps.pk) 
+            except Exception as e:
+                print(f"The dllist_task failed with error: {e}")
+
     # Generate model for analyser
     #TODO Handle all cases
     id = case.id
@@ -128,6 +138,16 @@ def windows_memory_analysis(dump_path,case):
             print(len(proc))
             for p in proc:
                 print(p)
+    dlls = DllList.objects.filter(process__investigation_id=id)
+    for dll in dlls:
+        proc = Process.objects.filter(investigation_id = id, ps_list__PID = dll.PID)
+        if len(proc) == 1:
+            dll_node = Dll(dll=dll, process=proc[0])
+            dll_node.save()
+        else: 
+            print(f"Unable to generate Dll Nodes for {dll}. Number of proc found {len(proc)}")
+
+
     return
 
 """Linux Memory Analysis (Not implemented yet)"""

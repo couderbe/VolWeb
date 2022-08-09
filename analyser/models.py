@@ -52,6 +52,9 @@ class Connection(Node):
 class File(Node):
     file = models.ForeignKey(FileScan, on_delete=models.CASCADE)
 
+class Dll(Node):
+    dll = models.ForeignKey(DllList, on_delete=models.CASCADE)
+    process = models.ForeignKey(Process, on_delete=models.CASCADE, blank=True)
 
 class RulesStorage(FileSystemStorage):
 

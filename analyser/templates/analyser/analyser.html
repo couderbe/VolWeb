@@ -26,6 +26,10 @@
                 <input class="filter-checkbox" type="checkbox" id="connections" name="connections" checked>
                 <label for="connections">Connections</label>
             </div>
+            <div>
+                <input class="filter-checkbox" type="checkbox" id="dlls" name="dlls" checked>
+                <label for="dlls">Dlls</label>
+            </div>
         </fieldset>
     </div>
     <div id="sidebar" class="sidebar">
@@ -49,6 +53,10 @@
     var commands = JSON.parse("{{Command|escapejs}}");
     var connections = JSON.parse("{{Connection|escapejs}}");
     var files = JSON.parse("{{File|escapejs}}");
+    var dlls = JSON.parse("{{Dll|escapejs}}");
+    for (dll of dlls){
+        dll["is_clamav_suspicious"] = dll.fields.dll['0'];
+    }
     const imgPath = "{% static '/images/analyser/' %}";
 
     var svg = d3.select("#graph");
@@ -74,9 +82,9 @@
         for (let node of connections) {
             nodesStore.push(node);
         }
-        // for (let node of files){
-        //     nodesStore.push(node);
-        // }
+        for (let node of dlls){
+            nodesStore.push(node);
+        }
         for (let node of nodesStore) {
             node['id'] = node['pk'];
             delete node['pk'];
@@ -89,11 +97,6 @@
             .join('image')
             .attr('height', 20)
             .attr('width', 20)
-            .attr('href', function (d) {
-                let modelSplit = d.model.split(".");
-                let path = imgPath + modelSplit[1] + ".svg";
-                return path;
-            })
             .call(drag(simulation))
             .on("click", onNodeClicked);
     }
@@ -126,6 +129,14 @@
             for (let proc of processes) {
                 if (proc.id === connection.fields.process) {
                     linksStore.push({ source: proc.id, target: connection.id });
+                }
+            }
+        }
+
+        for (let dll of dlls) {
+            for (let proc of processes) {
+                if (proc.id === dll.fields.process) {
+                    linksStore.push({ source: proc.id, target: dll.id });
                 }
             }
         }
@@ -177,6 +188,17 @@
             })
             .attr('y', function (d) {
                 return d.y
+            })
+            .attr('href', function (d) {
+                let modelSplit = d.model.split(".");
+                let path = imgPath + modelSplit[1];
+                if (d.is_clamav_suspicious){
+                    path += "_red.svg";
+                }
+                else{
+                    path += ".svg";
+                }
+                return path;
             })
             .call(drag(simulation));
 
@@ -322,11 +344,19 @@
         let show_commands = document.getElementById("commands").checked;
         let show_suspicious_only = document.getElementById("suspicious").checked;
         let show_connections = document.getElementById("connections").checked;
+        let show_dlls = document.getElementById("dlls").checked;
         let filtered_nodes = [];
         for (let node of nodesStore) {
             node["filtered"] = false;
             if (!show_commands) {
                 if (node.model === "analyser.command") {
+                    node["filtered"] = true;
+                    filtered_nodes.push(node);
+                }
+            }
+
+            if (!show_dlls) {
+                if (node.model === "analyser.dll") {
                     node["filtered"] = true;
                     filtered_nodes.push(node);
                 }
@@ -340,7 +370,7 @@
             }
 
             if (show_suspicious_only) {
-                if (!node["is_malicious"]) {
+                if (!node["is_clamav_suspicious"]) {
                     node["filtered"] = true;
                     filtered_nodes.push(node);
                 }

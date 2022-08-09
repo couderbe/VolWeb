@@ -30,6 +30,18 @@ def analyser(request):
             context = {}
             context['case'] = case
 
+            dlls = DllList.objects.filter(process__investigation_id=id)
+            for dll in dlls:
+                if len(Dll.objects.filter(dll=dll)) >= 1:
+                    continue
+                proc = Process.objects.filter(investigation_id = id, ps_list__PID = dll.PID)
+                if len(proc) == 1:
+                    dll_node = Dll(dll=dll, process=proc[0])
+                    dll_node.save()
+                else: 
+                    print(f"Unable to generate Dll Nodes for {dll}. Number of proc found {len(proc)}")
+
+
             #Models
             models = {
                 'Analysis':serializers.serialize("json",Analysis.objects.filter(investigation_id = id)),
@@ -38,6 +50,7 @@ def analyser(request):
                 'Command': serializers.serialize("json",Command.objects.filter(investigation_id = id)),
                 'Connection': serializers.serialize("json",Connection.objects.filter(investigation_id = id)),
                 'File': serializers.serialize("json",File.objects.filter(investigation_id = id)),
+                'Dll': serializers.serialize("json",Dll.objects.filter(process__investigation_id = id),use_natural_foreign_keys=True),
             }
             
             context.update(models)
@@ -325,7 +338,7 @@ def clamAV(request):
                 scan_res = clamav_file.delay(dll_path)
                 result = scan_res.get()
             else:
-                MODELS = {"PsSc7an": (PsScan, ProcessDump, "PID", "pid", dump_memory_pid, 'Cases/Results/process_dump_'),
+                MODELS = {"PsScan": (PsScan, ProcessDump, "PID", "pid", dump_memory_pid, 'Cases/Results/process_dump_'),
                           "FileScan": (FileScan, FileDump, "Offset", "offset", dump_memory_file, 'Cases/Results/file_dump_')}
                 scan_model, dump_model, comparaison_field_name_scan, comparaison_field_name_dump, dump_function, dump_path = MODELS[
                     model]
