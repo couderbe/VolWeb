@@ -1,55 +1,56 @@
 <div class="modal fade" id="showDetectionModal" tabindex="-1" aria-labelledby="showDetectionModal" aria-hidden="true">
     <div class="modal-dialog modal-xl">
-      <div class="modal-content bg-light">
-        <div class="modal-header bg-light">
-          <h5 class="modal-title" id="modal-title">Details</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-content bg-light">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title" id="modal-title">Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div id="detectionModalContent">
+                {% include "investigations/windows/detection/details.html" %}
+            </div>
         </div>
-        <div id="detectionModalContent">
-          {% include "investigations/windows/detection/details.html" %}
-        </div>
-      </div>
     </div>
-  </div>
-{% for rule in Detection %}
-<div class="mt-5 {{rule.Title|cut:' '  }} plugin">
-    <h6 class="h6">{{rule.Title}}</h6>
-    <div class="d-inline">
-        <input class="form-control mb-3" id="search{{rule.Title|cut:' '  }}" type="text" placeholder="Search..">
-    </div>
-    <table id="{{rule.Title|cut:' '  }}Table" class="table table-light  card-font {{rule.Title|cut:' '  }}">
-        <thead>
-            <tr>
-                {% for key,value in rule.Result.0.items %}
-                <th scope="col">{{key}}</th>
-                {% endfor %}
-            </tr>
-        </thead>
-        <tbody id="{{rule.Title|cut:' '  }}">
-            {% for elem in rule.Result %}
-            <tr  onclick="event.stopPropagation(); showDetails('{{elem.id}}','{{rule.Title}}Modal')">
-                {% for key,value in elem.items %}
-                <td>{{value}}</td>
-                {% endfor %}
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
 </div>
-{% endfor %}
+<div class="mt-5 Detection plugin">
+    {% for rule in Detection %}
+    <div class="mt-5">
+        <h6 class="h6" data-toggle="tooltip" data-placement="bottom" title="{{rule.Description}}">{{rule.Title}}</h6>
+        <table class="table table-light  card-font {{rule.Title|cut:' '  }}">
+            <thead>
+                <tr>
+                    {% for key,value in rule.Result.0.items %}
+                    <th scope="col">{{key}}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for elem in rule.Result %}
+                <tr onclick="event.stopPropagation(); showDetails('{{elem.id}}','Modal{{rule.Id}}')">
+                    {% for key,value in elem.items %}
+                    <td>{{value}}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+
+</div>
+
 <script>
-    function showDetails(id,modalId) {
+    function showDetails(id, modalId) {
         let modalContent = document.getElementById("detectionModalContent");
         let ruleDivs = modalContent.getElementsByTagName("div");
-        for (div of ruleDivs){
+        for (div of ruleDivs) {
             div.style.display = "none";
         }
         let ruleTr = modalContent.getElementsByClassName("modal-body-tr");
-        for (div of ruleTr){
+        for (div of ruleTr) {
             div.style.display = "none";
         }
-        $(`#${modalId}`).css("display","block");
-        $(`#${modalId} #${id}`).css("display","table-row");
+        $(`#${modalId}`).css("display", "block");
+        $(`#${modalId} #${id}`).css("display", "table-row");
         $("#showDetectionModal").modal("show");
     }
 </script>

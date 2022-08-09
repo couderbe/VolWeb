@@ -358,24 +358,10 @@ $(document).ready(function(){
     $('.Case').show();
   });
 
-
-  // Detection items sidebar interaction and search bar
-
-  var ul = document.getElementById("collapseDetection");
-  var items = ul.getElementsByTagName("a");
-  for (var i = 0; i < items.length; ++i) {
-    $("#"+items[i].id).on("click", function(){
-      $('.plugin').hide();
-      $('.'+this.id.slice(0,-4)).show();
-    });
-    $("#search"+items[i].id.slice(0,-4)).on("keyup", function() {
-      var value = $(this).val().toLowerCase();
-      $("#"+this.id.slice(6)+" tr").filter(function() {
-        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-      });
-    });
-
-  }
+  $("#DetectionLink").on("click", function(){
+    $('.plugin').hide();
+    $('.Detection').show();
+  });
 });
 
 function Virustotal(pk,url) {

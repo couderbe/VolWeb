@@ -1,3 +1,4 @@
+from hashlib import sha1
 import json
 from typing import Any, Callable
 import yaml
@@ -189,17 +190,19 @@ def parse_rule(invest_id: int, path: str) -> tuple:
     with open(path) as f:
         data = yaml.load(f, Loader=SafeLoader)
     print(data)
+    title = ""
+    description = ""
     result = ""
     artefacts = ""
     for key, value in data.items():
         if key == "title":
             title = value
         elif key == "description":
-            pass
+            description = value
         else:
             try:
                 result, artefacts = KEYWORD_TO_FUNCTION[key](
                     value, invest_id)
             except Exception as e:
                 print(f"Error: {e}")
-    return {"Title": ''.join(ch for ch in title if ch.isalnum()), "Result": list(result.values()), "Artefacts": artefacts}
+    return {"Title": title, "Description": description, "Result": list(result.values()), "Artefacts": artefacts, "Id": str(sha1(title.encode()).hexdigest())}

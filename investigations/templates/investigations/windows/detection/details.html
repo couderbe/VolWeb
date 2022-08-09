@@ -1,7 +1,7 @@
 {% load extras %}
 {% for rule in Detection %}
-<div id="{{rule.Title|cut:' '  }}Modal" style="display: none;">
-    {% for type,elems in rule.Artefacts.items %}
+<div id="Modal{{rule.Id}}" style="display: none;">
+{% for type,elems in rule.Artefacts.items %}
     <h6 class="h6">{{type}}</h6>
     <table class="table table-light  card-font" style="table-layout:fixed;width:100%;word-wrap:break-word;">
         <thead>
