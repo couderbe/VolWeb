@@ -33,5 +33,8 @@ RUN pip install -r requirements.txt
 COPY . $APP_HOME
 
 RUN chown -R app:app $APP_HOME
+RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+RUN /home/linuxbrew/.linuxbrew/bin/brew install bulk_extractor
 USER app
+RUN export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
 ENTRYPOINT ["/home/app/web/entrypoint.sh"]
