@@ -3,6 +3,7 @@ import subprocess
 from investigations.celery import app
 import hashlib
 import requests
+import shutil
 
 
 def get_key() -> str:
@@ -110,3 +111,18 @@ def clamav_file(filepath: str) -> 'tuple[bool,str]':
     except Exception as e:
         return (True,"Unable to check for viruses. Unknown Error")
     
+@app.task(name="bulk_extractor")
+def bulk_extractor(dump_path, output_path) -> str:
+    # Running Bulk Extractor
+    print(f"Running bulk_extractor on {dump_path }")
+    try:
+        output = subprocess.check_output(['/home/linuxbrew/.linuxbrew/bin/bulk_extractor',
+            dump_path, '-o', output_path],timeout=360)
+        print(output)
+        shutil.make_archive(f"{output_path}.zip", 'zip', output_path)
+    except subprocess.CalledProcessError as e:
+        print(e.cmd)
+        print(e.stdout)
+        print(e.stderr)
+
+    # Compressing the results

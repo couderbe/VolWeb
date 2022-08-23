@@ -17,5 +17,6 @@ urlpatterns = [
     path('dlllist/',views.dlllist, name='dlllist'),
     path('handles/',views.handles, name='handles'),
     path('download_dll/',views.download_dll, name='download_dll'),
+    path('download_bulk/',views.download_bulk, name='download_bulk'),
 
  ]

@@ -1,6 +1,6 @@
 from analyser.models import Analysis, Command, Connection, Dll, Dump, File, Process
 from analyser.rules import run_rules
-from analyser.tasks import clamav_file
+from analyser.tasks import bulk_extractor, clamav_file
 from investigations.models import *
 from analyser.models import Analysis, Command, Connection, Dump, File, Process
 from windows_engine.tasks import dlllist_task
@@ -44,6 +44,8 @@ def dump_memory_file(case_id, offset):
 
 """Windows automatic analysis"""
 def windows_memory_analysis(dump_path,case):
+    bulk_output_path = f"Cases/Results/{case.name}_bulk"
+    bulk_extractor(dump_path, bulk_output_path)
     PARTIAL_RESULTS = run_volweb_routine_windows(dump_path,case.id,case)
     case.percentage = "100"
     if PARTIAL_RESULTS:
@@ -54,6 +56,8 @@ def windows_memory_analysis(dump_path,case):
 
     logger.info("Running detection rules")
     windows_engine.models.RulesResult.objects.create(investigation_id=case.id, result=run_rules(case.id))    
+
+    logger.info("Running Bulk Extractor")
 
     # Dump all processes for clamAV analysis if asked
     if case.do_clamav:

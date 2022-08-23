@@ -14,6 +14,8 @@
 
   {% if case.os_version == "Windows" %}
   <div class="col-12 bg-light">
+    <h5 class="h5 text-dark">Bulk Extractor</h5>
+    {% include "investigations/windows/bulk_extractor.html"%}
     <h5 class="h5 text-dark">Process Dumps</h5>
     {% include "investigations/windows/process_dumps.html"%}
     <h5 class="h5 text-dark">File Dumps</h5>

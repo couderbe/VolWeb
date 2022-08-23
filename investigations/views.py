@@ -552,3 +552,29 @@ def download_dll(request):
 
         else:
             return JsonResponse({'message': "error"})
+
+@login_required
+def download_bulk(request):
+    """Download a bulk analysis
+
+        Arguments:
+        request : http request object
+
+        Comment:
+        The user requested to download the bulk analysis.
+        Get the file and return it.
+        """
+    if request.method == 'POST':
+        form = DownloadBulk(request.POST)
+        if form.is_valid():
+            case_id = form.cleaned_data['id']
+            case = UploadInvestigation.objects.get(id=case_id)
+            case_bulk_path = f'Cases/Results/{case.name}_bulk.zip'
+            try:
+                response = FileResponse(open(case_bulk_path, 'rb'),as_attachment=True,filename="{case.name}_bulk.zip")
+                return response
+            except:
+                messages.add_message(request,messages.ERROR,'Failed to fetch the requested process')
+
+        else:
+            return JsonResponse({'message': "error"})
