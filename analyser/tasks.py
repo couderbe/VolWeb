@@ -119,7 +119,7 @@ def bulk_extractor(dump_path, output_path) -> str:
         output = subprocess.check_output(['/home/linuxbrew/.linuxbrew/bin/bulk_extractor',
             dump_path, '-o', output_path],timeout=360)
         print(output)
-        shutil.make_archive(f"{output_path}.zip", 'zip', output_path)
+        shutil.make_archive(f"{output_path}", 'zip', output_path)
     except subprocess.CalledProcessError as e:
         print(e.cmd)
         print(e.stdout)

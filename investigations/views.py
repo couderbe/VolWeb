@@ -574,7 +574,7 @@ def download_bulk(request):
                 response = FileResponse(open(case_bulk_path, 'rb'),as_attachment=True,filename="{case.name}_bulk.zip")
                 return response
             except:
-                messages.add_message(request,messages.ERROR,'Failed to fetch the requested process')
-
+                messages.add_message(request,messages.ERROR,'Failed to fetch the requested file')
+                return JsonResponse({'message': "Unable to fetch requested file"})
         else:
             return JsonResponse({'message': "error"})

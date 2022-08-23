@@ -31,7 +31,7 @@
         //Check the Browser type and download the File.
         var isIE = false || !!document.documentMode;
         if (isIE) {
-          window.navigator.msSaveBlob(blob, filename);
+          window.navigator.msSaveBlob(blob, filename + ".zip");
         } else {
           var url = window.URL || window.webkitURL;
           link = url.createObjectURL(blob);
