@@ -1,4 +1,5 @@
 title: Potential Hidden Processes
+description: Processes detected by PsScan but not PsList may be attempting detection evasion.
 intersect:
   selection1:
     module: PsScan

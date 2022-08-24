@@ -1,5 +1,0 @@
-title: rundll32.exe
-selection:
-  module: PsScan
-  fields:
-    - ImageFileName: rundll32.exe

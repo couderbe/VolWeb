@@ -1,0 +1,6 @@
+title: rundll32.exe
+description: The rundll32.exe should be examined because various malware use this process such as Metasploit.
+selection:
+  module: PsScan
+  fields:
+    - ImageFileName: rundll32.exe

@@ -1,3 +1,4 @@
+import mimetypes
 from windows_engine.tasks import dlllist_task, handles_task
 from .tasks import start_memory_analysis, dump_memory_pid, app, dump_memory_file
 from django.http import HttpResponse, FileResponse, JsonResponse
@@ -554,7 +555,7 @@ def download_dll(request):
             return JsonResponse({'message': "error"})
 
 @login_required
-def download_bulk(request):
+def download_bulk(request, caseid):
     """Download a bulk analysis
 
         Arguments:
@@ -564,17 +565,13 @@ def download_bulk(request):
         The user requested to download the bulk analysis.
         Get the file and return it.
         """
-    if request.method == 'POST':
-        form = DownloadBulk(request.POST)
-        if form.is_valid():
-            case_id = form.cleaned_data['id']
-            case = UploadInvestigation.objects.get(id=case_id)
-            case_bulk_path = f'Cases/Results/{case.name}_bulk.zip'
-            try:
-                response = FileResponse(open(case_bulk_path, 'rb'),as_attachment=True,filename="{case.name}_bulk.zip")
-                return response
-            except:
-                messages.add_message(request,messages.ERROR,'Failed to fetch the requested file')
-                return JsonResponse({'message': "Unable to fetch requested file"})
-        else:
-            return JsonResponse({'message': "error"})
+    if request.method == 'GET':
+        case = UploadInvestigation.objects.get(id=caseid)
+        case_bulk_path = f'Cases/Results/{case.name}_bulk.zip'
+        path = open(case_bulk_path, 'rb')
+        mime_type, _ = mimetypes.guess_type(case_bulk_path)
+        response = HttpResponse(path, content_type=mime_type)
+        response['Content-Disposition'] = f"attachment; filename={case.name}_bulk.zip"
+        return response
+    else:
+        return JsonResponse({'message': "error"})
