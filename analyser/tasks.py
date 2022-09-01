@@ -117,7 +117,7 @@ def bulk_extractor(dump_path, output_path) -> str:
     print(f"Running bulk_extractor on {dump_path }")
     try:
         output = subprocess.check_output(['/home/linuxbrew/.linuxbrew/bin/bulk_extractor',
-            dump_path, '-o', output_path],timeout=360)
+            dump_path, '-o', output_path],timeout=1200)
         print(output)
         shutil.make_archive(f"{output_path}", 'zip', output_path)
     except subprocess.CalledProcessError as e:

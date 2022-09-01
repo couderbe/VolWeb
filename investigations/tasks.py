@@ -103,9 +103,16 @@ def windows_memory_analysis(dump_path,case):
     analysis.children = json.dumps({'children': [str(dump.id)]})
     analysis.save()
     pslist = PsList.objects.filter(investigation_id = id)
+    
+    dump_children = []
     for ps in pslist:
         proc = Process(dump=dump,ps_list=ps,investigation_id=id)
+        proc.children = json.dumps({'children': []})
         proc.save()
+        dump_children.append(str(proc.id))
+    dump.children = json.dumps({'children' : dump_children})
+    dump.save()
+
     commands = CmdLine.objects.filter(investigation_id  = id)
     for command in commands:
         proc = Process.objects.filter(investigation_id = id, ps_list__PID = command.PID,ps_list__ImageFileName=command.Process)
@@ -121,10 +128,16 @@ def windows_memory_analysis(dump_path,case):
             print("No proc found")
         cmd = Command(process=proc[0],cmdline=command,investigation_id=id)
         cmd.save()
+        proc_children = json.loads(proc[0].children)['children']
+        proc_children.append(str(cmd.id))
+        proc[0].children = json.dumps({'children': proc_children})
+        proc[0].save()
+
     files = FileScan.objects.filter(investigation_id = id)
     for file in files:
         f = File(file=file,investigation_id = id)
         f.save()
+
     connections = NetScan.objects.filter(investigation_id=id)
     for connection in connections:
         proc = Process.objects.filter(investigation_id = id, ps_list__PID = connection.PID)
@@ -137,6 +150,10 @@ def windows_memory_analysis(dump_path,case):
         elif len(proc) == 1:
             con = Connection(netscan=connection,process=proc[0],investigation_id=id)
             con.save()
+            proc_children = json.loads(proc[0].children)['children']
+            proc_children.append(str(con.id))
+            proc[0].children = json.dumps({'children': proc_children})
+            proc[0].save()
         else:
             print("More than 1")
             print(connection)
@@ -146,11 +163,30 @@ def windows_memory_analysis(dump_path,case):
     dlls = DllList.objects.filter(process__investigation_id=id)
     for dll in dlls:
         proc = Process.objects.filter(investigation_id = id, ps_list__PID = dll.PID)
-        if len(proc) == 1:
+        if len(proc) >= 1:
             dll_node = Dll(dll=dll, process=proc[0])
             dll_node.save()
+            proc_children = json.loads(proc[0].children)['children']
+            proc_children.append(str(dll_node.id))
+            proc[0].children = json.dumps({'children': proc_children})
+            proc[0].save()
         else: 
             print(f"Unable to generate Dll Nodes for {dll}. Number of proc found {len(proc)}")
+    
+    tree = PsTree.objects.filter(investigation_id=id)
+    def create_children_from_tree(tree):
+        for proc in tree:
+            tree_children = proc['children']
+            proc_parent = Process.objects.filter(investigation_id = id, ps_list__PID = proc['PID'])
+            proc_children = json.loads(proc_parent[0].children)['children']
+            for tree_child in tree_children:
+                proc_child = Process.objects.filter(investigation_id = id, ps_list__PID = tree_child['PID'])
+                proc_children.append(str(proc_child[0].id))
+            Process.objects.filter(investigation_id = id, ps_list__PID = proc['PID']).update(children=json.dumps({'children': proc_children}))
+            create_children_from_tree(tree_children)
+
+    create_children_from_tree(json.loads(tree[0].graph))
+
 
 
     return

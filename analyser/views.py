@@ -32,14 +32,23 @@ def analyser(request):
 
             dlls = DllList.objects.filter(process__investigation_id=id)
             for dll in dlls:
-                if len(Dll.objects.filter(dll=dll)) >= 1:
+                procs = Process.objects.filter(investigation_id = id, ps_list__PID = dll.PID)
+                if len(procs) <= 0:
+                    print(f"No processus detected for dll: {dll}")
                     continue
-                proc = Process.objects.filter(investigation_id = id, ps_list__PID = dll.PID)
-                if len(proc) == 1:
-                    dll_node = Dll(dll=dll, process=proc[0])
+                if len(Dll.objects.filter(dll=dll)) > 1:
+                    print(f"Multiple Dll objects for {dll}. This should not happend")
+                    continue
+                elif len(Dll.objects.filter(dll=dll)) == 1:
+                    dll_node = Dll.objects.get(dll=dll)
+                else:
+                    dll_node = Dll(dll=dll, process=procs[0])
                     dll_node.save()
-                else: 
-                    print(f"Unable to generate Dll Nodes for {dll}. Number of proc found {len(proc)}")
+                for proc in procs:
+                    proc_children = json.loads(proc.children)['children']
+                    proc_children.append(str(dll_node.id))
+                    proc.children = json.dumps({'children': proc_children})
+                    proc.save()
 
 
             #Models

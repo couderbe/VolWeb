@@ -43,7 +43,7 @@
 }
 
 .value {
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 .key {

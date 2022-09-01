@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 from celery import uuid
 from django.db import models
 import uuid
@@ -18,7 +19,7 @@ class Node(models.Model):
     id = models.UUIDField(primary_key=True,
                           default=uuid.uuid4,
                           editable=False)
-    children = models.JSONField(null=True, blank=True)
+    children = models.JSONField(null=True, blank=True, default=json.dumps({'children': []}))
     investigation_id = models.IntegerField(null=True)
 
     class Meta:

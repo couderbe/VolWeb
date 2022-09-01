@@ -102,42 +102,18 @@
     }
 
     function createLinks() {
-        //Create links from data
-        for (let i = 0; i < dumps.length; i++) {
-            for (let j = 0; j < analysis.length; j++) {
-                if (analysis[j].id === dumps[i].fields.analysis) {
-                    linksStore.push({ source: analysis[j].id, target: dumps[i].id })
-                }
-            }
-        }
-        for (let i = 0; i < processes.length; i++) {
-            for (let j = 0; j < dumps.length; j++) {
-                if (dumps[j].id === processes[i].fields.dump) {
-                    linksStore.push({ source: dumps[j].id, target: processes[i].id })
-                }
-            }
-        }
-        for (let command of commands) {
-            for (let proc of processes) {
-                if (proc.id === command.fields.process) {
-                    linksStore.push({ source: proc.id, target: command.id });
-                }
-            }
-        }
 
-        for (let connection of connections) {
-            for (let proc of processes) {
-                if (proc.id === connection.fields.process) {
-                    linksStore.push({ source: proc.id, target: connection.id });
+        for (let node of nodesStore){
+            console.log(node.fields.children);
+            children = JSON.parse(node.fields.children);
+            if (children['children'] != null){
+                for (let child_id of children['children']){
+                    linksStore.push({ source: node.id, target: child_id });
                 }
+                console.log(linksStore);
             }
-        }
-
-        for (let dll of dlls) {
-            for (let proc of processes) {
-                if (proc.id === dll.fields.process) {
-                    linksStore.push({ source: proc.id, target: dll.id });
-                }
+            else{
+                console.log("Unlinked node");
             }
         }
 
@@ -151,10 +127,6 @@
                 link['filtered'] = false;
             }
         }
-
-        //Set links static attributes
-
-
     }
 
     function updateLinks() {
