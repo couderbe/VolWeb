@@ -47,11 +47,7 @@ def windows_memory_analysis(dump_path,case):
     
     PARTIAL_RESULTS = run_volweb_routine_windows(dump_path,case.id,case)
     case.percentage = "100"
-    if PARTIAL_RESULTS:
-        case.status = "4"
-    else:
-        case.status = "2"
-    case.save()
+    
 
     logger.info("Running detection rules")
     windows_engine.models.RulesResult.objects.create(investigation_id=case.id, result=run_rules(case.id))    
@@ -83,7 +79,7 @@ def windows_memory_analysis(dump_path,case):
                 pslist_object.clamav_details = details
                 pslist_object.save()
 
-    # Dump all dlls is asked
+    # Dump all dlls if asked
     if False:
         processes = PsScan.objects.filter(investigation_id = case.id)
         for ps in processes:
@@ -187,7 +183,11 @@ def windows_memory_analysis(dump_path,case):
 
     create_children_from_tree(json.loads(tree[0].graph))
 
-
+    if PARTIAL_RESULTS:
+        case.status = "4"
+    else:
+        case.status = "2"
+    case.save()
 
     return
 

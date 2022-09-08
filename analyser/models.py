@@ -16,6 +16,8 @@ CHOICES = (
 
 
 class Node(models.Model):
+    """Abstract class for all graph Nodes
+    """
     id = models.UUIDField(primary_key=True,
                           default=uuid.uuid4,
                           editable=False)
@@ -58,7 +60,8 @@ class Dll(Node):
     process = models.ForeignKey(Process, on_delete=models.CASCADE, blank=True)
 
 class RulesStorage(FileSystemStorage):
-
+    """Custom FileSystemStorage for Analysis Rules
+    """
     def get_available_name(self, name, max_length=None):
         if self.exists(name):
             os.remove(os.path.join(settings.MEDIA_ROOT, name))

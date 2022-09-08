@@ -15,18 +15,47 @@ KEYWORD_TO_FUNCTION = {}
 FILTER_TO_FUNCTION = {}
 FILTER_PATTERN = re.compile(r'^filter[0-9]*$')
 
+class RuleFieldUnsupportedType(Exception):
+    pass
 
 def keyword(func: Callable) -> Callable:
+    """Decorator adding keyword function to dict
+
+    Args:
+        func (Callable): Function handling keyword
+
+    Returns:
+        Callable: Unmodified input function
+    """
     KEYWORD_TO_FUNCTION[func.__name__] = func
     return func
 
 
 def filter(func: Callable) -> Callable:
+    """Decorator adding filter function to dict
+
+    Args:
+        func (Callable): Function handling filter
+
+    Returns:
+        Callable: Unmodified input function
+    """
     FILTER_TO_FUNCTION[func.__name__] = func
     return func
 
 
 def fields_to_query(request: 'list[dict[str,Any]]') -> Q:
+    """Convert fields parameters to django query
+
+    Args:
+        request (list[dict[str,Any]]): fields parameters
+
+    Raises:
+        RuleFieldUnsupportedType: Raised in case of unsupported field value type
+
+    Returns:
+        Q: Generated query
+    """
     query = Q()
     for elt in request:
         sub_query = Q()
@@ -45,11 +74,21 @@ def fields_to_query(request: 'list[dict[str,Any]]') -> Q:
                 sub_query |= Q(**{field_name: field_value})
         else:
             print("Not supported field value type")
-            raise Exception
+            raise RuleFieldUnsupportedType
         query &= sub_query
     return query
 
 def difference(q1: QuerySet, q2: QuerySet, fields: 'list[dict]') -> QuerySet:
+    """Compute the difference between two querysets where equality is defined by fields
+
+    Args:
+        q1 (QuerySet): First Queryset
+        q2 (QuerySet): Second Queryset
+        fields (list[dict]): Fields used for equality check
+
+    Returns:
+        QuerySet: Difference Queryset
+    """
     result = q1
     for elt in q2:
         # Generate arguments from desired comparaison fields
@@ -60,8 +99,17 @@ def difference(q1: QuerySet, q2: QuerySet, fields: 'list[dict]') -> QuerySet:
         result = result.exclude(**args)
     return result
 
-#TODO Test me
 def intersection(q1: QuerySet, q2: QuerySet, fields: 'list[dict]') -> QuerySet:
+    """Compute the intersection between two querysets where equality is defined by fields
+
+    Args:
+        q1 (QuerySet): First Queryset
+        q2 (QuerySet): Second Queryset
+        fields (list[dict]): Fields used for equality check
+
+    Returns:
+        QuerySet: Intersection Queryset
+    """
     result = q1
     for elt in q1:
         # Generate arguments from desired comparaison fields
@@ -77,6 +125,15 @@ def intersection(q1: QuerySet, q2: QuerySet, fields: 'list[dict]') -> QuerySet:
 
 @keyword
 def selection(data: dict, invest_id: int) -> 'tuple(QuerySet, dict)':
+    """Function handling selection keyword
+
+    Args:
+        data (dict): Selection parameters
+        invest_id (int): Investigation id
+
+    Returns:
+        tuple(QuerySet, dict): Tuple composed of resulting queryset and detection artefacts as dict
+    """
     module = ""
     filters = []
     artefacts = {}
@@ -101,6 +158,15 @@ def selection(data: dict, invest_id: int) -> 'tuple(QuerySet, dict)':
 
 @keyword
 def intersect(data: dict, invest_id: int) -> 'tuple(QuerySet, dict)':
+    """Function handling intersect keyword
+
+    Args:
+        data (dict): Intersection parameters
+        invest_id (int): Investigation id
+
+    Returns:
+        tuple(QuerySet, dict): Tuple composed of resulting queryset and detection artefacts as dict
+    """
     query_set_1, _ = selection(data["selection1"], invest_id)
     query_set_2, _ = selection(data["selection2"], invest_id)
     if data["not"]:
@@ -111,7 +177,17 @@ def intersect(data: dict, invest_id: int) -> 'tuple(QuerySet, dict)':
 
 
 @filter
-def parent(data, args: 'list[dict[str,str]]', case_id: int) -> 'tuple(QuerySet, dict)':
+def parent(data: QuerySet, args: 'list[dict[str,str]]', case_id: int) -> 'tuple(QuerySet, dict)':
+    """Compute parents and filter data Queryset
+
+    Args:
+        data (QuerySet): unfiltered data
+        args (list[dict[str,str]]): filtering arguments
+        case_id (int): case id
+
+    Returns:
+        tuple(QuerySet, dict): Tuple with filtered data and detection artefacts
+    """
     query = fields_to_query(args)
     detection_artefacts = {}
     for process in data:
@@ -128,7 +204,17 @@ def parent(data, args: 'list[dict[str,str]]', case_id: int) -> 'tuple(QuerySet, 
 
 
 @filter
-def dll(data, args: 'list[dict[str,str]]', case_id: int) -> 'tuple(QuerySet, dict)':
+def dll(data: QuerySet, args: 'list[dict[str,str]]', case_id: int) -> 'tuple(QuerySet, dict)':
+    """Compute dlls and filter data Queryset
+
+    Args:
+        data (QuerySet): unfiltered data
+        args (list[dict[str,str]]): filtering arguments
+        case_id (int): case id
+
+    Returns:
+        tuple(QuerySet, dict): Tuple with filtered data and detection artefacts
+    """
     query = fields_to_query(args)
     detection_artefacts = {}
     for process in data:
@@ -147,7 +233,17 @@ def dll(data, args: 'list[dict[str,str]]', case_id: int) -> 'tuple(QuerySet, dic
 
 
 @filter
-def handles(data, args: 'list[dict[str,str]]', case_id: int) -> 'tuple(QuerySet, dict)':
+def handles(data: QuerySet, args: 'list[dict[str,str]]', case_id: int) -> 'tuple(QuerySet, dict)':
+    """Compute handles and filter data Queryset
+
+    Args:
+        data (QuerySet): unfiltered data
+        args (list[dict[str,str]]): filtering arguments
+        case_id (int): case id
+
+    Returns:
+        tuple(QuerySet, dict): Tuple with filtered data and detection artefacts
+    """
     query = fields_to_query(args)
     detection_artefacts = {}
     for process in data:
@@ -165,7 +261,17 @@ def handles(data, args: 'list[dict[str,str]]', case_id: int) -> 'tuple(QuerySet,
     return data, detection_artefacts
 
 @filter
-def count(data, args: 'list[dict[str,int]]', case_id: int) -> 'tuple(QuerySet, dict)':
+def count(data: QuerySet, args: 'list[dict[str,int]]', case_id: int) -> 'tuple(QuerySet, dict)':
+    """Compute count and filter data Queryset
+
+    Args:
+        data (QuerySet): unfiltered data
+        args (list[dict[str,str]]): filtering arguments
+        case_id (int): case id
+
+    Returns:
+        tuple(QuerySet, dict): Tuple with filtered data and detection artefacts
+    """
     comparaison_symbols = {"gt": ">", "gte": ">=", "lt": "<", "lte": "<=", "eq": "=="}
     count = data.count()
     for arg in args:
@@ -178,7 +284,15 @@ def count(data, args: 'list[dict[str,int]]', case_id: int) -> 'tuple(QuerySet, d
                 data = data.none()
     return data,{}
 
-def run_rules(invest_id: int) -> dict:
+def run_rules(invest_id: int) -> str:
+    """Run all the rules on the given investigation
+
+    Args:
+        invest_id (int): ID of the investigation to run the rules on
+
+    Returns:
+        str: json formatted string containing the results
+    """
     output = []
     rules = Rule.objects.filter(enabled=True)
     for rule in rules:
@@ -186,7 +300,16 @@ def run_rules(invest_id: int) -> dict:
     return json.dumps(output)
 
 
-def parse_rule(invest_id: int, path: str) -> tuple:
+def parse_rule(invest_id: int, path: str) -> dict:
+    """Parse a rule
+
+    Args:
+        invest_id (int): Investigation id
+        path (str): Path to the rule
+
+    Returns:
+        dict: Rules results, metadata and dectection artefacts
+    """
     with open(path) as f:
         data = yaml.load(f, Loader=SafeLoader)
     print(data)

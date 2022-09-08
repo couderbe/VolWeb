@@ -22,6 +22,11 @@ from django.apps import apps
 
 @login_required
 def analyser(request):
+    """Display analyser view
+
+    Args:
+        request : http request object
+    """
     if request.method == 'GET':
         form = ManageInvestigation(request.GET)
         if form.is_valid():
@@ -69,11 +74,22 @@ def analyser(request):
 
 @login_required
 def rules_management(request):
+    """Display rule managment page
+
+    Args:
+        request : http request object
+    """
     return render(request, 'analyser/rules.html', {'rules': Rule.objects.all()})
 
 
 @login_required
 def add_rule(request):
+    """Add a rule
+
+        Arguments:
+        request : http request object
+
+    """
     if request.method == 'POST':
         form = NewRuleForm(request.POST, request.FILES)
         if form.is_valid():
